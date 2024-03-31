@@ -9,7 +9,7 @@ I rewrote my algorithm in Object-Oriented format, partly as an exercise and part
 
 ## Acknowledgements
 This repo represents work funded by a URS grant for the project  
-`Stochastic Simulation of Transitions Between Methylation States` 
+`Stochastic Simulation of Transitions Between Methylation States`  
 awarded 3/17/2024 with expected completion by 7/12/2024.  
 **This project was supported by the University of Minnesota's Office of Undergraduate
 Research.**
