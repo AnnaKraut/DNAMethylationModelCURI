@@ -15,17 +15,16 @@ class GillespieModel:
         self.population = initialpop
         self.currstep = 1         #index of which step we're on
         self.steps = steps        #total steps
-        self.methylated = [0]*steps     #array of methylated cells
+        self.methylated = [0]*steps    
         self.unmethylated = [0]*steps
-        self.methylated[0] = initialpop/2 #array of unmethylated cells
+        self.methylated[0] = initialpop/2 
         self.unmethylated[0] = initialpop/2
         self.tarr = [0]*steps     #time array
         self.rng = np.random.default_rng() 
-        #create an rng object - think of it as buying the dice we'll roll later
+        #create an rng object - think of it as buying the dice we'll roll later - 
+        #we can seed the rng object if we want reproducible results
     
     def main(self):
-        
-
         for i in range(1, self.steps):
             dynamic_rates = {}
             relative_probabilities = {}
@@ -70,21 +69,22 @@ class GillespieModel:
                     sum_so_far += relative_probabilities[key]
             self.currstep += 1
         return (self.tarr, self.methylated,self.unmethylated)
+    #TODO - store the results of each run into a csv file
+    #header data - number of steps, population, seed of random number generator
+    #field data - tarr, methylated, unmethylated
 
 #plot 10 runs of the simulation
-
-
 population = 1000
-stepcount = 1000
-for i in range(1):
+stepcount = 100000
+for i in range(20):
     truple = GillespieModel(population,stepcount).main()
     x = truple[0]
     #methylated
     plt.plot(truple[0],truple[1], color='r')
     #unmethylated
     plt.plot(truple[0],truple[2], color='b')
-# plt.bar(x, truple[1], color='r')
-# plt.bar(x, truple[2], bottom=truple[1], color='b')
 plt.xlabel("Time (s)")
 plt.ylabel("Population")
 plt.show()
+
+#TODO - write a wrapper function to call and time this function, to measure optimiziation impact
