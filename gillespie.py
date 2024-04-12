@@ -9,6 +9,11 @@ from dataclasses import dataclass
 #the only difference is that we prefix them with c. (so "function(x) becomes c.function(x)")
 import config as c
 
+#TODO: convert to use numpy arrays (faster)
+#TODO: ask if its ok that arrays are fixed length - this makes optimizing them substantially easier
+#TODO: get some examples of ground-truth behavior to check models against
+#TODO: ask if they want runs saved, if so how
+
 class GillespieModel:
     def __init__(self,initialpop,steps):
         #TODO: find a better (shorter) name for the index than "currstep" - maybe step? i?
@@ -44,6 +49,7 @@ class GillespieModel:
             self.tarr[i] = tau + self.tarr[i-1]
 
             #calculate relative probability of each event happening
+            #this is the 'width' of the event in the interval (0,1)
             for key in dynamic_rates:
                 relative_probabilities[key] = dynamic_rates[key] / prob_sum
 
@@ -70,13 +76,14 @@ class GillespieModel:
             self.currstep += 1
         return (self.tarr, self.methylated,self.unmethylated)
     #TODO - store the results of each run into a csv file
-    #header data - number of steps, population, seed of random number generator
-    #field data - tarr, methylated, unmethylated
+    #header data - number of steps, population, seed of random number generator?
+    #field data - tarr, methylated, unmethylated?
+    #Or, just store the configs in the title, or assosciated text file?
 
 #plot 10 runs of the simulation
 population = 1000
 stepcount = 100000
-for i in range(20):
+for i in range(1):
     truple = GillespieModel(population,stepcount).main()
     x = truple[0]
     #methylated
@@ -87,4 +94,4 @@ plt.xlabel("Time (s)")
 plt.ylabel("Population")
 plt.show()
 
-#TODO - write a wrapper function to call and time this function, to measure optimiziation impact
+#TODO - write a wrapper function to call and time this function, to measure optimization impact
