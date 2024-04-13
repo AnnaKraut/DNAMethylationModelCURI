@@ -14,22 +14,24 @@ import config as c
 #TODO: get some examples of ground-truth behavior to check models against
 #TODO: ask if they want runs saved, if so how
 
-class GillespieModel:
-    def __init__(self,initialpop,steps,param_dict):
+class GillespieModelSwitchTime:
+    def __init__(self,steps,param_dict, totalpop, pop_methyl, pop_unmethyl):
         #TODO: find a better (shorter) name for the index than "currstep" - maybe step? i?
-        self.population = initialpop
+        self.population = totalpop
         self.currstep = 1         #index of which step we're on
         self.steps = steps        #total steps
         self.methylated = [0]*steps    
         self.unmethylated = [0]*steps
-        self.methylated[0] = initialpop/2 
-        self.unmethylated[0] = initialpop/2
+        self.methylated[0] = pop_methyl
+        self.unmethylated[0] = pop_unmethyl
         self.tarr = [0]*steps     #time array
         self.rng = np.random.default_rng() 
         #create an rng object - think of it as buying the dice we'll roll later - 
         #we can seed the rng object if we want reproducible results
         #is this initialization unnesceary? can we just point back to the param dict?
         self.params = param_dict
+        #is the model methylated or unmethylated - we'll check this later to see if it switches
+        self.startstate = c.find_state(self,0)
 
 
     
@@ -71,25 +73,47 @@ class GillespieModel:
                 else:
                     sum_so_far += relative_probabilities[key]
             self.currstep += 1
-        return (self.tarr, self.methylated,self.unmethylated)
-    #TODO - store the results of each run into a csv file
-    #header data - number of steps, population, seed of random number generator?
-    #field data - tarr, methylated, unmethylated?
-    #Or, just store the configs in the title, or assosciated text file?
-
-#plot 10 runs of the simulation - debugging
-
+            #check to see if we switched
+            curr_state = c.find_state(self,i)
+            if curr_state == 0: #can't tell what state we're in
+                continue
+            elif curr_state != self.startstate: #we're in the opposite state - we switched!
+                #TODO: be very very careful about off by one errors - do we want tarr of i, i-1, or i+1????
+                print("switched: from ", self.startstate, " to ", curr_state, " at time = ", self.tarr[i], " and step i =", i)
+                #return (self.tarr[i],self.tarr,self.methylated, self.unmethylated)
+                return self.tarr[i]
+        print("never switched - returning max time")
+        return self.tarr[i]
+        # return (self.tarr[i],self.tarr,self.methylated, self.unmethylated)
+    
+# default_parameters = {"r_hm": 0.5,
+#                       "r_hm_m": 20,
+#                       "r_hm_h": 10,
+#                       "r_uh": 0.35,
+#                       "r_uh_m": 11,
+#                       "r_uh_h": 5.5,
+#                       "r_mh": 9,
+#                       "r_mh_u": 10,
+#                       "r_mh_h": 5,
+#                       "r_hu": 39,
+#                       "r_hu_u": 10,
+#                       "r_hu_h": 5
+# }
+   
 # population = 1000
-# stepcount = 10000
+# stepcount = 3000
+# methyl = 800
+# unmethyl = 100
 # for i in range(10):
-#     truple = GillespieModel(population,stepcount,default_parameters).main()
-#     x = truple[0]
+#     frouple = GillespieModelSwitchTime(stepcount,default_parameters, population, methyl, unmethyl).main()
 #     #methylated
-#     plt.plot(truple[0],truple[1], color='r')
+#     plt.plot(frouple[1],frouple[2], color='r')
 #     #unmethylated
-#     plt.plot(truple[0],truple[2], color='b')
+#     plt.plot(frouple[1],frouple[3], color='b')
+#     plt.axvline(x= frouple[0])
+#     print("switch time", frouple[0])
 # plt.xlabel("Time (s)")
 # plt.ylabel("Population")
 # plt.show()
 
-#TODO - write a wrapper function to call and time this function, to measure optimization impact
+# #TODO - write a wrapper function to call and time this function, to measure optimization impact
