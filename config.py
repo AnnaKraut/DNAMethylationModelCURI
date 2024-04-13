@@ -95,6 +95,13 @@ rate_calculation = {"maintenance methylation":maintenance_rate,
 
 #TODO: add a function to determine if a given run of a simulation is sufficiently bistable or not
 
+#returns the state of the model - ie, whether it is methylated, unmethylated, or in the middle
+def find_state(self,step):
+      if (self.methylated[step] / self.population) > 0.7:
+            return 1
+      if (self.unmethylated[step] / self.population) > 0.7:
+            return -1
+      return 0
 
 #the "self" keyword ensures that the attribute following it is drawn from...
 #... the specific gillespie.py program that called the function
