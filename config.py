@@ -1,4 +1,4 @@
-#This is the config file for the main gillespie algorithm simulation
+ #This is the config file for the main gillespie algorithm simulation
 #gillespie.py imports event definitions and rates directly from this file
 #any changes made to this file will be reflected in gillespie.py next time it is run, 
 #assuming they are in the same folder.
@@ -8,6 +8,7 @@
 # an Event Dictionary mapping keys (names of events) to the functions from Event List
 # a Rate List defining functions to calculate the rate of a given event occuring, given the state of the model
 # a Rate Dictionary mapping keys (names of events, MUST MATCH those in Event Dictionary) to functions from Rate List
+# a Misc Functions section, which contains utility functions used elsewhere
 
 
 #-------Event List-------
@@ -56,28 +57,25 @@ base_events = {"maintenance methylation":maintenance_event,
 
 #These functions also take in `self` as their only argument, 
 # and access the model the same way as explained above (in event list)
+#would it be optimal to calculate hemimethylated as well?
 def maintenance_rate(self):
-      r_nm = 0.05
       m = self.population
       hemimethylated = m - (self.methylated[self.currstep-1] + self.unmethylated[self.currstep-1])
-      rate = r_nm * hemimethylated
+      rate = self.params["r_hm"] * hemimethylated
       return rate
 def denovo_rate(self):
-      r_uh = 0.05
-      rate =r_uh * self.unmethylated[self.currstep-1]
+      rate = self.params["r_hm"] * self.unmethylated[self.currstep-1]
       return rate
 def demaintenance_rate(self):
-      r_hu = 0.05
       m = self.population
       hemimethylated = m - (self.methylated[self.currstep-1] + self.unmethylated[self.currstep-1])
-      rate = r_hu * hemimethylated
+      rate = self.params["r_hu"] * hemimethylated
       return rate
 def demethylation_rate(self):
-      r_mh = 0.05
-      rate = r_mh * self.methylated[self.currstep-1]
+      rate = self.params["r_mh"] * self.methylated[self.currstep-1]
       return rate
 def birth_rate(self):
-      b = 0.001
+      b = 0.01
       rate = b
       return rate
 
@@ -92,6 +90,10 @@ rate_calculation = {"maintenance methylation":maintenance_rate,
                     "demethylation":demethylation_rate,
                     "birth":birth_rate
 }
+
+#-------Misc Functions-------
+
+#TODO: add a function to determine if a given run of a simulation is sufficiently bistable or not
 
 
 #the "self" keyword ensures that the attribute following it is drawn from...
