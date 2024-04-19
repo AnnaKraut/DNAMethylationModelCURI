@@ -1,4 +1,5 @@
- #This is the config file for the main gillespie algorithm simulation
+import matplotlib.pyplot as plt
+#This is the config file for the main gillespie algorithm simulation
 #gillespie.py imports event definitions and rates directly from this file
 #any changes made to this file will be reflected in gillespie.py next time it is run, 
 #assuming they are in the same folder.
@@ -102,6 +103,16 @@ def find_state(self,step):
       if (self.unmethylated[step] / self.population) > 0.7:
             return -1
       return 0
+
+def debug_graph(self, step):
+      if (self.debug):
+                        print(("switched from ", self.startstate, " at time = ", self.tarr[step], " and step i =", step))
+                        plt.plot(self.tarr, self.methylated, color='r')
+                        plt.plot(self.tarr, self.unmethylated, color='b')
+                        plt.axvline(x = self.tarr[step])
+                        plt.xlabel("Time (s)")
+                        plt.ylabel("Population")
+                        plt.show()
 
 #the "self" keyword ensures that the attribute following it is drawn from...
 #... the specific gillespie.py program that called the function

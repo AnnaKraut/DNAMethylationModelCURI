@@ -15,8 +15,9 @@ import config as c
 #TODO: ask if they want runs saved, if so how
 
 class GillespieModelSwitchTime:
-    def __init__(self,steps,param_dict, totalpop, pop_methyl, pop_unmethyl):
+    def __init__(self,steps,param_dict, totalpop, pop_methyl, pop_unmethyl,debug = False):
         #TODO: find a better (shorter) name for the index than "currstep" - maybe step? i?
+        self.debug = debug #this is a debug toggle - if its true, we print out graphs and additional info.
         self.population = totalpop
         self.currstep = 1         #index of which step we're on
         self.steps = steps        #total steps
@@ -79,12 +80,15 @@ class GillespieModelSwitchTime:
                 continue
             elif curr_state != self.startstate: #we're in the opposite state - we switched!
                 #TODO: be very very careful about off by one errors - do we want tarr of i, i-1, or i+1????
-                print("switched: from ", self.startstate, " to ", curr_state, " at time = ", self.tarr[i], " and step i =", i)
                 #return (self.tarr[i],self.tarr,self.methylated, self.unmethylated)
+                if (self.debug):
+                    c.debug_graph(self,i)
                 return self.tarr[i]
-        print("never switched - returning max time")
+        # never switched
+        if (self.debug):
+                    print("never switched - ran for max iterations")
+                    c.debug_graph(self,i)
         return self.tarr[i]
-        # return (self.tarr[i],self.tarr,self.methylated, self.unmethylated)
     
 # default_parameters = {"r_hm": 0.5,
 #                       "r_hm_m": 20,

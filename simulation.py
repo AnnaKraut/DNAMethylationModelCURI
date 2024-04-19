@@ -1,6 +1,7 @@
 import numpy as np
 import gillespieswitch
 import matplotlib.pyplot as plt
+import scipy.stats as stats
 #TODO: just for fun, in the timing layer, output the amount of data processed to an external file
 #so that we can track how much data the simulator has processed
 
@@ -13,7 +14,7 @@ default_parameters = {"r_hm": 0.5,
                       "r_uh": 0.35,
                       "r_uh_m": 11,
                       "r_uh_h": 5.5,
-                      "r_mh": 20,#changed this - ORIGINALLY 0.1
+                      "r_mh": 0.1,#changed this - ORIGINALLY 0.1
                       "r_mh_u": 10,
                       "r_mh_h": 5,
                       "r_hu": 0.1,
@@ -29,26 +30,23 @@ step_size = 0.05
 #define step count - how many different values of the parameter to test
 step_count = 5
 #define batch size - how many different runs should we average for each step? (default 10 for testing, should increase)
-batch_size = 40
+batch_size = 1
 #define length of trials (default 1000) - they will usually stop earlier, this is more for allocating space
-trial_max_length = 3000
+trial_max_length = 30000
 #define starting population
 totalpop = 1000
 methylatedpop = 800
 unmethylatedpop = 100
 #-----------setup-----------
-
-#define storage arrays - these will be used to generate the graphs, or shunted into a storage database if needed
-#output_ array of size step_count, containing
-#--arrays of size batch_size, containing
-#----switching times (ints)
 output_array = []
+exponential_parameters = [None] * step_count
+#create arrays to use later
 for i in range(step_count):
     output_array.append(np.zeros(batch_size))
 
 #do some math to figure out what values of the param we want to test - store in an array (steps_to_test)
-#TODO: figure out how to do this
-steps_to_test = [10, 15, 20, 25, 30]
+#TODO: figure out how to do generate parameters - do we generate parameter array automatically, or should the user define it?
+steps_to_test = [0.05,0.1,0.15,0.2,0.25]
     
 #-----------simulation-----------
 
@@ -56,18 +54,18 @@ for step in range(len(steps_to_test)):
     #make a copy of the default parameters, change the parameter we want to study
     input_dict = default_parameters.copy() # shallow copy
     input_dict[param_to_change] = steps_to_test[step]
+    #run a batch of identical gillespie algorithms, store the results in output_array[step]
     for i in range(batch_size):
-        output_array[step][i] = gillespieswitch.GillespieModelSwitchTime(trial_max_length,input_dict, totalpop, methylatedpop, unmethylatedpop).main()
+        output_array[step][i] = gillespieswitch.GillespieModelSwitchTime(trial_max_length,input_dict, totalpop, methylatedpop, unmethylatedpop,True).main()
     plt.hist(output_array[step],bins=20)
     plt.show()
-print(output_array)
-#run trials 
-#for step in steps_to_test:
-#--initialize a input_parameters dictionary with the stuff we want to test
-#--call batch_size runs of gillespie.py, all with the same parameters - could probably paralellize HERE- all doing same thing
-#----measure their times to switch, store them in an array
-
+    #guess an exponential parameter
+    exponential_parameters[step] = stats.expon.fit(output_array[step],floc=0)
+    print("predicted exponential parameter: ", exponential_parameters[step])
+# print(output_array)
 #-----------analysis-----------
+
+
 
 #for each batch (batch number is equivalent to number of steps)
 #--look at the arrays, process them to find out the distribution of switching times
