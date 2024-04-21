@@ -82,7 +82,7 @@ class GillespieModelSwitchTime:
                 #TODO: be very very careful about off by one errors - do we want tarr of i, i-1, or i+1????
                 #return (self.tarr[i],self.tarr,self.methylated, self.unmethylated)
                 if (self.debug):
-                    c.debug_graph(self,i)
+                    c.debug_graph(self,i)   
                 return self.tarr[i]
         # never switched
         if (self.debug):
