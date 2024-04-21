@@ -59,6 +59,8 @@ base_events = {"maintenance methylation":maintenance_event,
 #These functions also take in `self` as their only argument, 
 # and access the model the same way as explained above (in event list)
 #would it be optimal to calculate hemimethylated as well?
+
+#-----NON-COLLABORATIVE RATES------
 def maintenance_rate(self):
       m = self.population
       hemimethylated = m - (self.methylated[self.currstep-1] + self.unmethylated[self.currstep-1])
@@ -75,6 +77,31 @@ def demaintenance_rate(self):
 def demethylation_rate(self):
       rate = self.params["r_mh"] * self.methylated[self.currstep-1]
       return rate
+
+#------COLLABORATIVE RATES------
+def maintenance_rate_collaborative(self):
+      hemimethylated = self.population - (self.methylated[self.currstep-1] + self.unmethylated[self.currstep-1])
+      methylated = self.methylated[self.currstep-1]
+      rate = hemimethylated * (self.params["r_hm"] + self.params["r_hm_h"]*hemimethylated + self.params["r_hm_m"]*methylated)
+      return rate
+def denovo_rate_collaborative(self):
+      hemimethylated = self.population - (self.methylated[self.currstep-1] + self.unmethylated[self.currstep-1])
+      methylated = self.methylated[self.currstep-1]
+      rate = self.unmethylated[self.currstep-1] * (self.params["r_uh"] + self.params["r_uh_h"]*hemimethylated + self.params["r_uh_m"]*methylated)
+      return rate
+def demaintenance_rate_collaborative(self):
+      hemimethylated = self.population - (self.methylated[self.currstep-1] + self.unmethylated[self.currstep-1])
+      unmethylated = self.unmethylated[self.currstep-1]
+      rate = hemimethylated * (self.params["r_hu"] + self.params["r_hu_h"]*hemimethylated + self.params["r_hu_u"]*unmethylated)
+      return rate
+def demethylation_rate_collaborative(self):
+      hemimethylated = self.population - (self.methylated[self.currstep-1] + self.unmethylated[self.currstep-1])
+      methylated = self.methylated[self.currstep-1]
+      unmethylated = self.unmethylated[self.currstep-1]
+      rate = methylated * (self.params["r_mh"] + self.params["r_mh_h"]*hemimethylated + self.params["r_mh_u"]*unmethylated)
+      return rate
+
+#TODO: expose birth rate as a param
 def birth_rate(self):
       b = 0.01
       rate = b
