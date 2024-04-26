@@ -5,22 +5,6 @@ import scipy.stats as stats
 #TODO: just for fun, in the timing layer, output the amount of data processed to an external file
 #so that we can track how much data the simulator has processed
 
-#define a dictionary with the parameters - these will be passed into the simulations and should be easily changable
-#the dictionary might not play well with multithreading - may need to change this
-#fixed number of parameters - could just be a list if needed - if so abstract that away from the user
-# default_parameters = {"r_hm": 0.5,#changed this - was 0.5
-#                       "r_hm_m": 20, #changed - was 20
-#                       "r_hm_h": 10,
-#                       "r_uh": 0.35,#cahgned this - was 0.35
-#                       "r_uh_m": 11,#changed - was 11
-#                       "r_uh_h": 5.5,
-#                       "r_mh": 0.1,
-#                       "r_mh_u": 10,
-#                       "r_mh_h": 5,
-#                       "r_hu": 17.1,#changed this - was 0.1
-#                       "r_hu_u": 40, #changed - was 10
-#                       "r_hu_h": 15 #changed - was 5
-# }
 #-----------parameterization-----------
 #TODO: add easier ways for users to input data
 # define a parameter to vary - must be in the dictionary above - this should probably be selectable on command line
@@ -30,13 +14,15 @@ step_size = 0.05
 #define step count - how many different values of the parameter to test
 step_count = 1
 #define batch size - how many different runs should we average for each step? (default 10 for testing, should increase)
-batch_size = 3
+batch_size = 400
 #define length of trials (default 1000) - they will usually stop earlier, this is more for allocating space
 trial_max_length = 10000
 #define starting population
 totalpop = 100
 methylatedpop = 50
 unmethylatedpop = 50
+#set the debug toggle
+debug = False
 #-----------Rates Dictionary---------
 default_parameters = {"r_hm": 0.5,#changed this - was 0.5
                       "r_hm_m": 20/totalpop, #changed - was 20
@@ -71,7 +57,12 @@ for step in range(len(steps_to_test)):
     input_dict[param_to_change] = steps_to_test[step]
     #run a batch of identical gillespie algorithms, store the results in output_array[step]
     for i in range(batch_size):
-        output_array[step][i] = gillespieswitch.GillespieModelSwitchTime(trial_max_length,input_dict, totalpop, methylatedpop, unmethylatedpop,True).main()
+        if i == 0:
+            FinishAndSave = True
+        else:
+            FinishAndSave = False
+        output_array[step][i] = gillespieswitch.GillespieModelSwitchTime(trial_max_length,input_dict, totalpop, methylatedpop, unmethylatedpop,debug,FinishAndSave).main()
+    plt.close()
     plt.hist(output_array[step],bins=20)
     plt.show()
     #guess an exponential parameter
