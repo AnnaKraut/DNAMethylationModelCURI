@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from datetime import datetime
 #This is the config file for the main gillespie algorithm simulation
 #gillespie.py imports event definitions and rates directly from this file
 #any changes made to this file will be reflected in gillespie.py next time it is run, 
@@ -137,15 +138,27 @@ def find_state(self,step):
             return -1
       return 0
 
-def debug_graph(self, step):
-      if (self.debug):
-                        print(("switched from ", self.startstate, " at time = ", self.tarr[step], " and step i =", step))
-                        plt.plot(self.tarr, self.methylated, color='r')
-                        plt.plot(self.tarr, self.unmethylated, color='b')
-                        plt.axvline(x = self.tarr[step])
-                        plt.xlabel("Time (s)")
-                        plt.ylabel("Population")
-                        plt.show()
+def debug_graph(self, step,show=False, save=False):
+      print(("switched from ", self.startstate, " at time = ", self.tarr[step], " and step i =", step))
+      plt.plot(self.tarr, self.methylated, color='r')
+      plt.plot(self.tarr, self.unmethylated, color='b')
+      plt.axvline(x = self.tarr[step])
+      plt.xlabel("Time (s)")
+      plt.ylabel("Population")
+      #if the user wants to save the image, we do that here.
+      if save:
+            name = make_name_for_output()
+            plt.savefig(name + '.png')
+      if show:
+            plt.show()
+            plt.close()
+
+def make_name_for_output():
+      name = str(datetime.now())
+      name = name.replace(':', '-')
+      name = name.replace(' ', '_')
+      name = name.replace('.', '-')
+      return name
 
 #the "self" keyword ensures that the attribute following it is drawn from...
 #... the specific gillespie.py program that called the function
