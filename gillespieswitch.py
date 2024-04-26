@@ -81,6 +81,11 @@ class GillespieModelSwitchTime:
             elif curr_state != self.startstate: #we're in the opposite state - we switched!
                 #TODO: be very very careful about off by one errors - do we want tarr of i, i-1, or i+1????
                 #return (self.tarr[i],self.tarr,self.methylated, self.unmethylated)
+                if self.startstate == 0:
+                     #this is the case that the simulation started with an even mix of methylated/unmethylated
+                     #we set the start state to whichever state it reaches first
+                     self.startstate = curr_state
+                     continue
                 if (self.debug):
                     c.debug_graph(self,i)   
                 return self.tarr[i]

@@ -8,35 +8,50 @@ import scipy.stats as stats
 #define a dictionary with the parameters - these will be passed into the simulations and should be easily changable
 #the dictionary might not play well with multithreading - may need to change this
 #fixed number of parameters - could just be a list if needed - if so abstract that away from the user
-default_parameters = {"r_hm": 0.5,
-                      "r_hm_m": 20,
-                      "r_hm_h": 10,
-                      "r_uh": 0.35,
-                      "r_uh_m": 11,
-                      "r_uh_h": 5.5,
-                      "r_mh": 0.1,#changed this - ORIGINALLY 0.1
-                      "r_mh_u": 10,
-                      "r_mh_h": 5,
-                      "r_hu": 0.1,
-                      "r_hu_u": 10,
-                      "r_hu_h": 5
-}
+# default_parameters = {"r_hm": 0.5,#changed this - was 0.5
+#                       "r_hm_m": 20, #changed - was 20
+#                       "r_hm_h": 10,
+#                       "r_uh": 0.35,#cahgned this - was 0.35
+#                       "r_uh_m": 11,#changed - was 11
+#                       "r_uh_h": 5.5,
+#                       "r_mh": 0.1,
+#                       "r_mh_u": 10,
+#                       "r_mh_h": 5,
+#                       "r_hu": 17.1,#changed this - was 0.1
+#                       "r_hu_u": 40, #changed - was 10
+#                       "r_hu_h": 15 #changed - was 5
+# }
 #-----------parameterization-----------
 #TODO: add easier ways for users to input data
-#define a parameter to vary - must be in the dictionary above - this should probably be selectable on command line
+# define a parameter to vary - must be in the dictionary above - this should probably be selectable on command line
 param_to_change = "r_hu"
 #define step size of parameter - ie, how much will each run be different
 step_size = 0.05
 #define step count - how many different values of the parameter to test
-step_count = 5
+step_count = 1
 #define batch size - how many different runs should we average for each step? (default 10 for testing, should increase)
-batch_size = 1
+batch_size = 3
 #define length of trials (default 1000) - they will usually stop earlier, this is more for allocating space
-trial_max_length = 30000
+trial_max_length = 10000
 #define starting population
-totalpop = 1000
-methylatedpop = 800
-unmethylatedpop = 100
+totalpop = 100
+methylatedpop = 50
+unmethylatedpop = 50
+#-----------Rates Dictionary---------
+default_parameters = {"r_hm": 0.5,#changed this - was 0.5
+                      "r_hm_m": 20/totalpop, #changed - was 20
+                      "r_hm_h": 10/totalpop,
+                      "r_uh": 0.35,#cahgned this - was 0.35
+                      "r_uh_m": 11/totalpop,#changed - was 11
+                      "r_uh_h": 5.5/totalpop,
+                      "r_mh": 0.1,
+                      "r_mh_u": 10/totalpop,
+                      "r_mh_h": 5/totalpop,
+                      "r_hu": 0.1,#changed this - was 0.1
+                      "r_hu_u": 10/totalpop, #changed - was 10
+                      "r_hu_h": 5/totalpop #changed - was 5
+}
+
 #-----------setup-----------
 output_array = []
 exponential_parameters = [None] * step_count
@@ -46,7 +61,7 @@ for i in range(step_count):
 
 #do some math to figure out what values of the param we want to test - store in an array (steps_to_test)
 #TODO: figure out how to do generate parameters - do we generate parameter array automatically, or should the user define it?
-steps_to_test = [0.05,0.1,0.15,0.2,0.25]
+steps_to_test = [0.1/totalpop]
     
 #-----------simulation-----------
 

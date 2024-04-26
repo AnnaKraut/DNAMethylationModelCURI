@@ -83,27 +83,32 @@ def maintenance_rate_collaborative(self):
       hemimethylated = self.population - (self.methylated[self.currstep-1] + self.unmethylated[self.currstep-1])
       methylated = self.methylated[self.currstep-1]
       rate = hemimethylated * (self.params["r_hm"] + self.params["r_hm_h"]*hemimethylated + self.params["r_hm_m"]*methylated)
+      # print("calculated maintenance rate: ", rate)
       return rate
 def denovo_rate_collaborative(self):
       hemimethylated = self.population - (self.methylated[self.currstep-1] + self.unmethylated[self.currstep-1])
       methylated = self.methylated[self.currstep-1]
-      rate = self.unmethylated[self.currstep-1] * (self.params["r_uh"] + self.params["r_uh_h"]*hemimethylated + self.params["r_uh_m"]*methylated)
+      unmethylated = self.unmethylated[self.currstep-1]
+      rate = unmethylated * (self.params["r_uh"] + self.params["r_uh_h"]*hemimethylated + self.params["r_uh_m"]*methylated)
+      # print("calculated denovo rate: ", rate)
       return rate
 def demaintenance_rate_collaborative(self):
       hemimethylated = self.population - (self.methylated[self.currstep-1] + self.unmethylated[self.currstep-1])
       unmethylated = self.unmethylated[self.currstep-1]
       rate = hemimethylated * (self.params["r_hu"] + self.params["r_hu_h"]*hemimethylated + self.params["r_hu_u"]*unmethylated)
+      # print("calculated demaintenance rate: ", rate)
       return rate
 def demethylation_rate_collaborative(self):
       hemimethylated = self.population - (self.methylated[self.currstep-1] + self.unmethylated[self.currstep-1])
       methylated = self.methylated[self.currstep-1]
       unmethylated = self.unmethylated[self.currstep-1]
       rate = methylated * (self.params["r_mh"] + self.params["r_mh_h"]*hemimethylated + self.params["r_mh_u"]*unmethylated)
+      # print("calculated demethylation rate: ", rate)
       return rate
 
 #TODO: expose birth rate as a param
 def birth_rate(self):
-      b = 0.01
+      b = 1
       rate = b
       return rate
 
@@ -112,11 +117,12 @@ def birth_rate(self):
 #Same as with base_rates, the first part ("de novo methylation") 
 # should NOT be changed and MUST match an event in base_events
 #However, the second part (denovo_rate) can be changed to any desired valid function
-rate_calculation = {"maintenance methylation":maintenance_rate,
-                    "de novo methylation":denovo_rate,
-                    "maintenance demethylation":demaintenance_rate,
-                    "demethylation":demethylation_rate,
-                    "birth":birth_rate
+rate_calculation = {
+                    "maintenance methylation":maintenance_rate_collaborative,
+                    "de novo methylation":denovo_rate_collaborative,
+                    "birth":birth_rate,
+                    "maintenance demethylation":demaintenance_rate_collaborative,
+                    "demethylation":demethylation_rate_collaborative
 }
 
 #-------Misc Functions-------
