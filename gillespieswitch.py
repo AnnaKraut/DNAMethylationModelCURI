@@ -15,7 +15,7 @@ import config as c
 #TODO: ask if they want runs saved, if so how
 
 class GillespieModelSwitchTime:
-    def __init__(self,steps,param_dict, totalpop, pop_methyl, pop_unmethyl,debug = False):
+    def __init__(self,steps,param_dict, totalpop, pop_methyl, pop_unmethyl,debug = False,FinishAndSave = False):
         #TODO: find a better (shorter) name for the index than "currstep" - maybe step? i?
         self.debug = debug #this is a debug toggle - if its true, we print out graphs and additional info.
         self.population = totalpop
@@ -33,8 +33,7 @@ class GillespieModelSwitchTime:
         self.params = param_dict
         #is the model methylated or unmethylated - we'll check this later to see if it switches
         self.startstate = c.find_state(self,0)
-
-
+        self.FinishAndSave = FinishAndSave
     
     def main(self):
         for i in range(1, self.steps):
@@ -74,55 +73,33 @@ class GillespieModelSwitchTime:
                 else:
                     sum_so_far += relative_probabilities[key]
             self.currstep += 1
-            #check to see if we switched
-            curr_state = c.find_state(self,i)
-            if curr_state == 0: #can't tell what state we're in
-                continue
-            elif curr_state != self.startstate: #we're in the opposite state - we switched!
-                #TODO: be very very careful about off by one errors - do we want tarr of i, i-1, or i+1????
-                #return (self.tarr[i],self.tarr,self.methylated, self.unmethylated)
-                if self.startstate == 0:
-                     #this is the case that the simulation started with an even mix of methylated/unmethylated
-                     #we set the start state to whichever state it reaches first
-                     self.startstate = curr_state
-                     continue
-                if (self.debug):
-                    c.debug_graph(self,i)   
-                return self.tarr[i]
+
+            #this block will stop the graph when it switches ONLY IF the finish and save parameter was true
+            if self.FinishAndSave == False:
+                #check to see if we switched
+                curr_state = c.find_state(self,i)
+                if curr_state == 0: #can't tell what state we're in
+                    continue
+                elif curr_state != self.startstate: #we're in the opposite state - we switched!
+                    #TODO: be very very careful about off by one errors - do we want tarr of i, i-1, or i+1????
+                    #return (self.tarr[i],self.tarr,self.methylated, self.unmethylated)
+                    if self.startstate == 0:
+                        #this is the case that the simulation started with an even mix of methylated/unmethylated
+                        #we set the start state to whichever state it reaches first
+                        self.startstate = curr_state
+                        continue
+                    if (self.debug):
+                        c.debug_graph(self,i, self.debug, self.FinishAndSave)   
+                    return self.tarr[i]
         # never switched
-        if (self.debug):
-                    print("never switched - ran for max iterations")
-                    c.debug_graph(self,i)
+        if self.debug:
+            print("never switched - ran for max iterations")
+            #display the graph - FinishAndSave controls whether its saved or not
+            c.debug_graph(self,i, self.debug)
+        #save image without showing graph / printing debug info
+        elif self.FinishAndSave:
+            c.debug_graph(self, i, self.debug, self.FinishAndSave)
+             
         return self.tarr[i]
-    
-# default_parameters = {"r_hm": 0.5,
-#                       "r_hm_m": 20,
-#                       "r_hm_h": 10,
-#                       "r_uh": 0.35,
-#                       "r_uh_m": 11,
-#                       "r_uh_h": 5.5,
-#                       "r_mh": 9,
-#                       "r_mh_u": 10,
-#                       "r_mh_h": 5,
-#                       "r_hu": 39,
-#                       "r_hu_u": 10,
-#                       "r_hu_h": 5
-# }
-   
-# population = 1000
-# stepcount = 3000
-# methyl = 800
-# unmethyl = 100
-# for i in range(10):
-#     frouple = GillespieModelSwitchTime(stepcount,default_parameters, population, methyl, unmethyl).main()
-#     #methylated
-#     plt.plot(frouple[1],frouple[2], color='r')
-#     #unmethylated
-#     plt.plot(frouple[1],frouple[3], color='b')
-#     plt.axvline(x= frouple[0])
-#     print("switch time", frouple[0])
-# plt.xlabel("Time (s)")
-# plt.ylabel("Population")
-# plt.show()
 
 # #TODO - write a wrapper function to call and time this function, to measure optimization impact
