@@ -129,6 +129,8 @@ rate_calculation = {
 #-------Misc Functions-------
 
 #TODO: add a function to determine if a given run of a simulation is sufficiently bistable or not
+#TODO: differentiate switching times for methylated to unmethylated and vice versa
+
 
 #returns the state of the model - ie, whether it is methylated, unmethylated, or in the middle
 def find_state(self,step):
@@ -148,7 +150,7 @@ def debug_graph(self, step,show=False, save=False):
       #if the user wants to save the image, we do that here.
       if save:
             name = make_name_for_output()
-            plt.savefig(name + '.png')
+            plt.savefig("output/" + name + '.png')
       if show:
             plt.show()
             plt.close()
