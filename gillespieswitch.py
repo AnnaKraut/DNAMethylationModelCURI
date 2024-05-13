@@ -47,7 +47,6 @@ class GillespieModelSwitchTime:
             for key in c.rate_calculation:
                 dynamic_rates[key] = c.rate_calculation[key](self)
                 prob_sum += dynamic_rates[key]
-            #print("sum of probabilities: ", prob_sum)
 
             #find tau for our current state and update our time array
             tau = self.rng.exponential(scale = 1/prob_sum) 
@@ -79,20 +78,9 @@ class GillespieModelSwitchTime:
                 curr_state = c.find_state(self,i)
                 if curr_state == 0: #can't tell what state we're in
                     continue
-                elif curr_state != self.startstate: #we're in the opposite state - we switched!
-                    #TODO: be very very careful about off by one errors - do we want tarr of i, i-1, or i+1????
-                    #return (self.tarr[i],self.tarr,self.methylated, self.unmethylated)
-                    if self.startstate == 0:
-                        #this is the case that the simulation started with an even mix of methylated/unmethylated
-                        #we set the start state to whichever state it reaches first
-                        self.startstate = curr_state
-                        continue
-                    if (self.debug):
-                        c.debug_graph(self,i, self.debug, self.FinishAndSave)   
-                    return self.tarr[i]
-                # elif curr_state == self.SwitchDirection: #case for switching to a targeted direction.
-                #     #we assume that the model was NOT in the self.switchdirection state to begin with
-                #     #so, as soon as it ends up in the target state, we return
+                # elif curr_state != self.startstate: #we're in the opposite state - we switched!
+                #     #TODO: be very very careful about off by one errors - do we want tarr of i, i-1, or i+1????
+                #     #return (self.tarr[i],self.tarr,self.methylated, self.unmethylated)
                 #     if self.startstate == 0:
                 #         #this is the case that the simulation started with an even mix of methylated/unmethylated
                 #         #we set the start state to whichever state it reaches first
@@ -101,7 +89,18 @@ class GillespieModelSwitchTime:
                 #     if (self.debug):
                 #         c.debug_graph(self,i, self.debug, self.FinishAndSave)   
                 #     return self.tarr[i]
-        # never switched
+                elif curr_state == self.SwitchDirection: #case for switching to a targeted direction.
+                    #we assume that the model was NOT in the self.switchdirection state to begin with
+                    #so, as soon as it ends up in the target state, we return
+                    if self.startstate == 0:
+                        #this is the case that the simulation started with an even mix of methylated/unmethylated
+                        #we set the start state to whichever state it reaches first
+                        self.startstate = curr_state
+                        continue
+                    if (self.debug):
+                        c.debug_graph(self,i, self.debug, self.FinishAndSave)   
+                    return self.tarr[i]
+        # in this case, we never switched
         if self.debug:
             print("never switched - ran for max iterations")
             #display the graph - FinishAndSave controls whether its saved or not

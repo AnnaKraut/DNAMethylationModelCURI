@@ -16,13 +16,13 @@ import time
 #-----------parameterization-----------
 #TODO: add easier ways for users to input data
 # define a parameter to vary - must be in the dictionary above - this should probably be selectable on command line
-param_to_change = "r_hu"
+param_to_change = "birth_rate"
 #define step size of parameter - ie, how much will each run be different
 step_size = 0.05
 #define step count - how many different values of the parameter to test
 step_count = 1
 #define batch size - how many different runs should we average for each step? (default 10 for testing, should increase)
-batch_size = 5000
+batch_size = 50
 #define length of trials (default 1000) - they will usually stop earlier, this is more for allocating space
 trial_max_length = 10000
 #define starting population
@@ -46,7 +46,8 @@ default_parameters = {"r_hm": 0.5,#changed this - was 0.5
                       "r_mh_h": 5/totalpop,
                       "r_hu": 0.1,#changed this - was 0.1
                       "r_hu_u": 10/totalpop, #changed - was 10
-                      "r_hu_h": 5/totalpop #changed - was 5
+                      "r_hu_h": 5/totalpop, #changed - was 5
+                      "birth_rate": 1
 }
 
 #-----------setup-----------
@@ -59,7 +60,8 @@ for i in range(step_count):
 #what values of the param do we want to test - store in an array (steps_to_test)
 #TODO: figure out how to do generate parameters - do we generate parameter array automatically, or should the user define it?
 # steps_to_test = [500/totalpop]
-steps_to_test = [0.1]
+# steps_to_test = [0.6, 0.8, 1, 1.2, 1.4]
+steps_to_test = [1]
     
 #-----------simulation-----------
 
@@ -77,9 +79,8 @@ for step in range(len(steps_to_test)):
         output_array[step][i] = gillespieswitch.GillespieModelSwitchTime(trial_max_length,input_dict, totalpop, methylatedpop, unmethylatedpop, SwitchDirection, debug, FinishAndSave).main()
         if output_array[step][i] >= 0: #this result was valid
             valid_size += 1
-    plt.close()
-    #process the output_array to remove negative values
 
+    #valid_array contains all the simulations that did NOT time-out
     valid_index = 0
     valid_array = np.zeros(valid_size)
     for j in range(batch_size):
@@ -87,16 +88,21 @@ for step in range(len(steps_to_test)):
             valid_array[valid_index] = output_array[step][j]
             valid_index += 1
 
-
-    # plt.hist(output_array[step],bins=20)
-    plt.hist(valid_array, bins=20)
-    plt.savefig("histograms/" + str(time.perf_counter()) + "with" + str(batch_size) + "of" + str(trial_max_length) + '.png')
-    plt.show()
     #guess an exponential parameter
-    # exponential_parameters[step] = stats.expon.fit(output_array[step],floc=0)
-    exponential_parameters[step] = stats.expon.fit(valid_array,floc=0)
+    exponential_parameters[step] = stats.expon.fit(valid_array,floc=0)[1]
     print("predicted exponential parameter: ", exponential_parameters[step])
-# print(output_array)
+
+    plt.close() #ensure the previous graph is done
+    plt.hist(valid_array, bins=20)
+
+    #generate strings, we will concatenate these into a single title string for the graphs
+    param_string = "parameter: " + str(param_to_change) +  " = " + str(steps_to_test[step]) + " -> Exponential Parameter = " + str(exponential_parameters[step])
+    step_string = "Step " + str(step+1) + "/" + str(step_count)
+    batch_string = "Batch of " + str(batch_size) + ", running for " + str(trial_max_length) + " steps each"
+    plt.title(param_string + "\n" + step_string + "\n" + batch_string)
+                
+    plt.savefig("histograms/" + str(time.perf_counter()) + "with" + str(batch_size) + "of" + str(trial_max_length) + '.png')
+    plt.close()
 #-----------analysis-----------
 
 
