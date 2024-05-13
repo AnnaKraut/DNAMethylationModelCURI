@@ -2,8 +2,16 @@ import numpy as np
 import gillespieswitch
 import matplotlib.pyplot as plt
 import scipy.stats as stats
+import time
 #TODO: just for fun, in the timing layer, output the amount of data processed to an external file
 #so that we can track how much data the simulator has processed
+
+
+
+#TODO: use 90/10 splits, play with birth rate
+#measure switch at 70/30
+#measure methylated to unmethylated and vice versa seperately
+
 
 #-----------parameterization-----------
 #TODO: add easier ways for users to input data
@@ -14,20 +22,23 @@ step_size = 0.05
 #define step count - how many different values of the parameter to test
 step_count = 1
 #define batch size - how many different runs should we average for each step? (default 10 for testing, should increase)
-batch_size = 400
+batch_size = 10000
 #define length of trials (default 1000) - they will usually stop earlier, this is more for allocating space
-trial_max_length = 10000
+trial_max_length = 1000
 #define starting population
 totalpop = 100
-methylatedpop = 50
-unmethylatedpop = 50
+methylatedpop = 20
+unmethylatedpop = 70
+#SwitchDirection - a simulation terminates when it reaches this state
+#1 -> mostly methylated, -1-> mostly unmethylated
+SwitchDirection = 1
 #set the debug toggle
 debug = False
 #-----------Rates Dictionary---------
-default_parameters = {"r_hm": 0.5,#changed this - was 0.5
+default_parameters = {"r_hm": 2.5,#changed this - was 0.5
                       "r_hm_m": 20/totalpop, #changed - was 20
                       "r_hm_h": 10/totalpop,
-                      "r_uh": 0.35,#cahgned this - was 0.35
+                      "r_uh": 1.35,#cahgned this - was 0.35
                       "r_uh_m": 11/totalpop,#changed - was 11
                       "r_uh_h": 5.5/totalpop,
                       "r_mh": 0.1,
@@ -45,9 +56,10 @@ exponential_parameters = [None] * step_count
 for i in range(step_count):
     output_array.append(np.zeros(batch_size))
 
-#do some math to figure out what values of the param we want to test - store in an array (steps_to_test)
+#what values of the param do we want to test - store in an array (steps_to_test)
 #TODO: figure out how to do generate parameters - do we generate parameter array automatically, or should the user define it?
-steps_to_test = [0.1/totalpop]
+# steps_to_test = [500/totalpop]
+steps_to_test = [0.1]
     
 #-----------simulation-----------
 
@@ -61,9 +73,10 @@ for step in range(len(steps_to_test)):
             FinishAndSave = True
         else:
             FinishAndSave = False
-        output_array[step][i] = gillespieswitch.GillespieModelSwitchTime(trial_max_length,input_dict, totalpop, methylatedpop, unmethylatedpop,debug,FinishAndSave).main()
+        output_array[step][i] = gillespieswitch.GillespieModelSwitchTime(trial_max_length,input_dict, totalpop, methylatedpop, unmethylatedpop, SwitchDirection, debug, FinishAndSave).main()
     plt.close()
     plt.hist(output_array[step],bins=20)
+    plt.savefig("histograms/" + str(time.perf_counter()) + "with" + str(batch_size) + "of" + str(trial_max_length) + '.png')
     plt.show()
     #guess an exponential parameter
     exponential_parameters[step] = stats.expon.fit(output_array[step],floc=0)

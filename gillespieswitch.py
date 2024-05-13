@@ -15,7 +15,7 @@ import config as c
 #TODO: ask if they want runs saved, if so how
 
 class GillespieModelSwitchTime:
-    def __init__(self,steps,param_dict, totalpop, pop_methyl, pop_unmethyl,debug = False,FinishAndSave = False):
+    def __init__(self,steps,param_dict, totalpop, pop_methyl, pop_unmethyl,SwitchDirection, debug = False, FinishAndSave = False):
         #TODO: find a better (shorter) name for the index than "currstep" - maybe step? i?
         self.debug = debug #this is a debug toggle - if its true, we print out graphs and additional info.
         self.population = totalpop
@@ -34,6 +34,7 @@ class GillespieModelSwitchTime:
         #is the model methylated or unmethylated - we'll check this later to see if it switches
         self.startstate = c.find_state(self,0)
         self.FinishAndSave = FinishAndSave
+        self.SwitchDirection = SwitchDirection
     
     def main(self):
         for i in range(1, self.steps):
@@ -49,7 +50,6 @@ class GillespieModelSwitchTime:
             #print("sum of probabilities: ", prob_sum)
 
             #find tau for our current state and update our time array
-            #NOTE we invert prob_sum to get the right distribution - is this right?
             tau = self.rng.exponential(scale = 1/prob_sum) 
             #print("resulting tau = ", tau)
             self.tarr[i] = tau + self.tarr[i-1]
@@ -80,14 +80,20 @@ class GillespieModelSwitchTime:
                 curr_state = c.find_state(self,i)
                 if curr_state == 0: #can't tell what state we're in
                     continue
-                elif curr_state != self.startstate: #we're in the opposite state - we switched!
-                    #TODO: be very very careful about off by one errors - do we want tarr of i, i-1, or i+1????
-                    #return (self.tarr[i],self.tarr,self.methylated, self.unmethylated)
-                    if self.startstate == 0:
-                        #this is the case that the simulation started with an even mix of methylated/unmethylated
-                        #we set the start state to whichever state it reaches first
-                        self.startstate = curr_state
-                        continue
+                # elif curr_state != self.startstate: #we're in the opposite state - we switched!
+                #     #TODO: be very very careful about off by one errors - do we want tarr of i, i-1, or i+1????
+                #     #return (self.tarr[i],self.tarr,self.methylated, self.unmethylated)
+                #     if self.startstate == 0:
+                #         #this is the case that the simulation started with an even mix of methylated/unmethylated
+                #         #we set the start state to whichever state it reaches first
+                #         self.startstate = curr_state
+                #         continue
+                #     if (self.debug):
+                #         c.debug_graph(self,i, self.debug, self.FinishAndSave)   
+                #     return self.tarr[i]
+                elif curr_state == self.SwitchDirection: #case for switching to a targeted direction.
+                    #we assume that the model was NOT in the self.switchdirection state to begin with
+                    #so, as soon as it ends up in the target state, we return
                     if (self.debug):
                         c.debug_graph(self,i, self.debug, self.FinishAndSave)   
                     return self.tarr[i]
