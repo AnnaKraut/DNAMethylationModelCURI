@@ -109,9 +109,10 @@ def demethylation_rate_collaborative(self):
 
 #TODO: expose birth rate as a param
 def birth_rate(self):
-      b = 1
-      rate = b
-      return rate
+      return self.params["birth_rate"]
+      # b = 1
+      # rate = b
+      # return rate
 
 #-------Rate Dictionary-------
 
