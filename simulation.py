@@ -22,23 +22,23 @@ step_size = 0.05
 #define step count - how many different values of the parameter to test
 step_count = 1
 #define batch size - how many different runs should we average for each step? (default 10 for testing, should increase)
-batch_size = 10000
+batch_size = 5000
 #define length of trials (default 1000) - they will usually stop earlier, this is more for allocating space
-trial_max_length = 1000
+trial_max_length = 10000
 #define starting population
 totalpop = 100
-methylatedpop = 20
-unmethylatedpop = 70
+methylatedpop = 10
+unmethylatedpop = 90
 #SwitchDirection - a simulation terminates when it reaches this state
 #1 -> mostly methylated, -1-> mostly unmethylated
 SwitchDirection = 1
 #set the debug toggle
 debug = False
 #-----------Rates Dictionary---------
-default_parameters = {"r_hm": 2.5,#changed this - was 0.5
+default_parameters = {"r_hm": 0.5,#changed this - was 0.5
                       "r_hm_m": 20/totalpop, #changed - was 20
                       "r_hm_h": 10/totalpop,
-                      "r_uh": 1.35,#cahgned this - was 0.35
+                      "r_uh": 0.35,#cahgned this - was 0.35
                       "r_uh_m": 11/totalpop,#changed - was 11
                       "r_uh_h": 5.5/totalpop,
                       "r_mh": 0.1,
@@ -64,6 +64,7 @@ steps_to_test = [0.1]
 #-----------simulation-----------
 
 for step in range(len(steps_to_test)):
+    valid_size = 0
     #make a copy of the default parameters, change the parameter we want to study
     input_dict = default_parameters.copy() # shallow copy
     input_dict[param_to_change] = steps_to_test[step]
@@ -74,12 +75,26 @@ for step in range(len(steps_to_test)):
         else:
             FinishAndSave = False
         output_array[step][i] = gillespieswitch.GillespieModelSwitchTime(trial_max_length,input_dict, totalpop, methylatedpop, unmethylatedpop, SwitchDirection, debug, FinishAndSave).main()
+        if output_array[step][i] >= 0: #this result was valid
+            valid_size += 1
     plt.close()
-    plt.hist(output_array[step],bins=20)
+    #process the output_array to remove negative values
+
+    valid_index = 0
+    valid_array = np.zeros(valid_size)
+    for j in range(batch_size):
+        if output_array[step][j] >= 0:
+            valid_array[valid_index] = output_array[step][j]
+            valid_index += 1
+
+
+    # plt.hist(output_array[step],bins=20)
+    plt.hist(valid_array, bins=20)
     plt.savefig("histograms/" + str(time.perf_counter()) + "with" + str(batch_size) + "of" + str(trial_max_length) + '.png')
     plt.show()
     #guess an exponential parameter
-    exponential_parameters[step] = stats.expon.fit(output_array[step],floc=0)
+    # exponential_parameters[step] = stats.expon.fit(output_array[step],floc=0)
+    exponential_parameters[step] = stats.expon.fit(valid_array,floc=0)
     print("predicted exponential parameter: ", exponential_parameters[step])
 # print(output_array)
 #-----------analysis-----------
