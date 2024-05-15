@@ -20,18 +20,18 @@ param_to_change = "birth_rate"
 #define step size of parameter - ie, how much will each run be different
 step_size = 0.05
 #define step count - how many different values of the parameter to test
-step_count = 1
+step_count = 5
 #define batch size - how many different runs should we average for each step? (default 10 for testing, should increase)
-batch_size = 50
+batch_size = 2500
 #define length of trials (default 1000) - they will usually stop earlier, this is more for allocating space
 trial_max_length = 10000
 #define starting population
 totalpop = 100
-methylatedpop = 10
-unmethylatedpop = 90
+methylatedpop = 90
+unmethylatedpop = 10
 #SwitchDirection - a simulation terminates when it reaches this state
 #1 -> mostly methylated, -1-> mostly unmethylated
-SwitchDirection = 1
+SwitchDirection = -1
 #set the debug toggle
 debug = False
 #-----------Rates Dictionary---------
@@ -60,8 +60,8 @@ for i in range(step_count):
 #what values of the param do we want to test - store in an array (steps_to_test)
 #TODO: figure out how to do generate parameters - do we generate parameter array automatically, or should the user define it?
 # steps_to_test = [500/totalpop]
-# steps_to_test = [0.6, 0.8, 1, 1.2, 1.4]
-steps_to_test = [1]
+steps_to_test = [1.4, 1.6, 1.8, 2.0, 2.2]
+# steps_to_test = [1]
     
 #-----------simulation-----------
 
@@ -91,6 +91,7 @@ for step in range(len(steps_to_test)):
     #guess an exponential parameter
     exponential_parameters[step] = stats.expon.fit(valid_array,floc=0)[1]
     print("predicted exponential parameter: ", exponential_parameters[step])
+    print("timed-out simulations: " + str(batch_size-valid_size) + " out of " + str(batch_size))
 
     plt.close() #ensure the previous graph is done
     plt.hist(valid_array, bins=20)
@@ -98,7 +99,7 @@ for step in range(len(steps_to_test)):
     #generate strings, we will concatenate these into a single title string for the graphs
     param_string = "parameter: " + str(param_to_change) +  " = " + str(steps_to_test[step]) + " -> Exponential Parameter = " + str(exponential_parameters[step])
     step_string = "Step " + str(step+1) + "/" + str(step_count)
-    batch_string = "Batch of " + str(batch_size) + ", running for " + str(trial_max_length) + " steps each"
+    batch_string = "Batch of " + str(batch_size) + ", running for " + str(trial_max_length) + " steps each " + str(batch_size-valid_size) + " failed to finish"
     plt.title(param_string + "\n" + step_string + "\n" + batch_string)
                 
     plt.savefig("histograms/" + str(time.perf_counter()) + "with" + str(batch_size) + "of" + str(trial_max_length) + '.png')
