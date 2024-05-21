@@ -33,12 +33,13 @@ The simulation operates at 3 increasingly abstract levels of detail, each of whi
 Let's say the user wants to simulate 5000 runs of a simulation with the default methylation parameters and a maximum simulation length of 10,000 steps.   
 Go to the `#-----------parameterization-----------` heading in simulation.py and change batch_size to 5000, and trial_max_length to 10000.  
 Then set the initial condition of the simulation - by default, there are 100 sites, of which 90 are methylated and 10 unmethylated. This means the cell's **starting state is methylated -** so, it's probably most interesting to observe the switching times **to unmethylated.**  To do this, set SwitchDirection to -1 (or 1 to switch to methylated).  
- - this will run the code on a single parameter regime.  
-After these parameters are adjusted to your liking, simply run simulations.py - it will handle everything else. **Make sure you have folders titled "histograms" and "output" in the same folder** - simulations.py will write a graph of the first simulation to "output" for debugging purposes, and a histogram of the switching times across all simulations to the "histograms" folder. These graphs will look something like this:  
-![Methylated and unmethylated sites over time in a single simulation](images/output1.png)
-![Distribution of switching times across all runs of the simulation](images/histogram1.png)
-There are additional config parameters that allow users to vary a single parameter across a wide range of values (param_to_change, param_begin_val, param_end_val, param_step_size): the user will enter a range and step size, and the program will run a batch of simulations for each step in the range, returning a graph that looks something like this:
 
+This will run the code on a single parameter regime.  
+
+After these parameters are adjusted to your liking, simply run simulations.py - it will handle everything else.
+
+
+There are additional config parameters that allow users to vary a single parameter across a wide range of values (param_to_change, param_begin_val, param_end_val, param_step_size): the user will enter a range and step size, and the program will run a batch of simulations for each step in the range.
 
 
 
