@@ -34,6 +34,7 @@ unmethylatedpop = 10
 SwitchDirection = -1 #1 -> mostly methylated, -1-> mostly unmethylated
 #set the debug toggle
 debug = False
+batch_debug = False
 FinishAndSave = False
 #-----------Rates Dictionary---------
 default_parameters = {"r_hm": 0.5,#changed this - was 0.5
@@ -96,17 +97,18 @@ for step in range(len(steps_to_test)):
     print("predicted exponential parameter: ", exponential_parameters[step])
     print("timed-out simulations: " + str(batch_size-valid_size) + " out of " + str(batch_size))
 
-    # plt.close() #ensure the previous graph is done
-    # plt.hist(valid_array, bins=20)
+    #save a graph of batch results if toggle is enabled
+    if batch_debug:
+        plt.close() #ensure the previous graph is done
+        plt.hist(valid_array, bins=20)
 
-    # #generate strings, we will concatenate these into a single title string for the graphs
-    # param_string = "parameter: " + str(param_to_change) +  " = " + str(steps_to_test[step]) + " -> Exponential Parameter = " + str(exponential_parameters[step])
-    # step_string = "Step " + str(step+1) + "/" + str(step_count)
-    # batch_string = "Batch of " + str(batch_size) + ", running for " + str(trial_max_length) + " steps each " + str(batch_size-valid_size) + " failed to finish"
-    # plt.title(param_string + "\n" + step_string + "\n" + batch_string)
-                
-    # plt.savefig("histograms/" + str(time.perf_counter()) + "with" + str(batch_size) + "of" + str(trial_max_length) + '.png')
-    # plt.close()
+        #generate strings, we will concatenate these into a single title string for the graphs
+        param_string = "parameter: " + str(param_to_change) +  " = " + str(steps_to_test[step]) + " -> Exponential Parameter = " + str(exponential_parameters[step])
+        step_string = "Step " + str(step+1) + "/" + str(step_count)
+        batch_string = "Batch of " + str(batch_size) + ", running for " + str(trial_max_length) + " steps each " + str(batch_size-valid_size) + " failed to finish"
+        plt.title(param_string + "\n" + step_string + "\n" + batch_string)
+        plt.savefig("histograms/" + str(time.perf_counter()) + "with" + str(batch_size) + "of" + str(trial_max_length) + '.png')
+        plt.close()
 #-----------analysis-----------
 plt.close()
 final_label = "Switching times from methylated to unmethylated as birth rate changes \n Population = 100"
