@@ -36,7 +36,7 @@ Then set the initial condition of the simulation - by default, there are 100 sit
 
 This will run the code on a single parameter regime.  
 
-After these parameters are adjusted to your liking, simply run simulations.py - it will handle everything else.
+After these parameters are adjusted to your liking, simply **run simulations.py** - it will handle everything else.
 
 
 There are additional config parameters that allow users to vary a single parameter across a wide range of values (param_to_change, param_begin_val, param_end_val, param_step_size): the user will enter a range and step size, and the program will run a batch of simulations for each step in the range.
