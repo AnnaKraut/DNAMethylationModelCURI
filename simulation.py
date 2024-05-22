@@ -17,13 +17,13 @@ import time
 #-----------parameterization-----------
 #TODO: add easier ways for users to input data
 #user should enter begin, end, step for the parameter they want to change.
-param_begin_val = 0.6 
+param_begin_val = 0.5
 param_end_val = 2
 param_step_size = 0.05
 # define a parameter to vary - must be in the parameters dictionary - this should probably be selectable on command line
 param_to_change = "birth_rate"
 #define batch size - how many different runs should we average for each step? (default 10 for testing, should increase)
-batch_size = 5000
+batch_size = 500
 #define length of trials (default 1000) - they will usually stop earlier, this is more for allocating space
 trial_max_length = 10000
 #define starting population
@@ -60,6 +60,7 @@ step_count = len(steps_to_test)
 #generate the arrays for our output
 output_array = []
 exponential_parameters = [None] * step_count
+timeouts = [0] * step_count
 
 for i in range(step_count):
     output_array.append(np.zeros(batch_size))
@@ -90,12 +91,15 @@ for step in range(len(steps_to_test)):
 
     #only guess parameter if more than half of the runs finished
     if valid_size > batch_size/2:
-        exponential_parameters[step] = stats.expon.fit(valid_array,floc=0)[1]
+        
+        #TEMPORARILY SCALING UP BY 10 TO MAKE GRAPH LOOK BETTER
+        exponential_parameters[step] = 10 * stats.expon.fit(valid_array,floc=0)[1]
     else: #otherwise, mark the parameter as negative, meaning its a no go
-        exponential_parameters[step] = -1
+        exponential_parameters[step] = None
 
     print("predicted exponential parameter: ", exponential_parameters[step])
     print("timed-out simulations: " + str(batch_size-valid_size) + " out of " + str(batch_size))
+    timeouts[step] = batch_size-valid_size
 
     #save a graph of batch results if toggle is enabled
     if batch_debug:
@@ -113,8 +117,10 @@ for step in range(len(steps_to_test)):
 plt.close()
 final_label = "Switching times from methylated to unmethylated as birth rate changes \n Population = 100"
 run_stats = "Batches of " + str(batch_size) + ", running for maximum of " + str(trial_max_length) + " steps each"
-plt.plot(steps_to_test, exponential_parameters)
+plt.plot(steps_to_test, exponential_parameters,label="exponential parameters scaled 10x")
+plt.plot(steps_to_test,timeouts, label = "timed out simulations")
 plt.title(final_label + "\n" + run_stats)
 plt.xlabel('Value of parameter '+ param_to_change)
 plt.ylabel('Exponential parameter of switching time distribution')
+plt.legend(loc='upper right')
 plt.show()
