@@ -23,7 +23,7 @@ param_step_size = 0.05
 # define a parameter to vary - must be in the parameters dictionary - this should probably be selectable on command line
 param_to_change = "birth_rate"
 #define batch size - how many different runs should we average for each step? (default 10 for testing, should increase)
-batch_size = 500
+batch_size = 5
 #define length of trials (default 1000) - they will usually stop earlier, this is more for allocating space
 trial_max_length = 10000
 #define starting population
@@ -91,9 +91,7 @@ for step in range(len(steps_to_test)):
 
     #only guess parameter if more than half of the runs finished
     if valid_size > batch_size/2:
-        
-        #TEMPORARILY SCALING UP BY 10 TO MAKE GRAPH LOOK BETTER
-        exponential_parameters[step] = 10 * stats.expon.fit(valid_array,floc=0)[1]
+        exponential_parameters[step] = stats.expon.fit(valid_array,floc=0)[1]
     else: #otherwise, mark the parameter as negative, meaning its a no go
         exponential_parameters[step] = None
 
@@ -117,8 +115,8 @@ for step in range(len(steps_to_test)):
 plt.close()
 final_label = "Switching times from methylated to unmethylated as birth rate changes \n Population = 100"
 run_stats = "Batches of " + str(batch_size) + ", running for maximum of " + str(trial_max_length) + " steps each"
-plt.plot(steps_to_test, exponential_parameters,label="exponential parameters scaled 10x")
-plt.plot(steps_to_test,timeouts, label = "timed out simulations")
+plt.plot(steps_to_test, exponential_parameters,label="exponential parameters")
+# plt.plot(steps_to_test,timeouts, label = "timed out simulations")
 plt.title(final_label + "\n" + run_stats)
 plt.xlabel('Value of parameter '+ param_to_change)
 plt.ylabel('Exponential parameter of switching time distribution')
