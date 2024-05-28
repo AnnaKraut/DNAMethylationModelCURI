@@ -33,6 +33,7 @@ def demethylation_event(self):
       self.methylated[self.currstep] = self.methylated[self.currstep-1]-1
       self.unmethylated[self.currstep] = self.unmethylated[self.currstep-1]
 
+#ask anna - is this birth logic correct - specifically the way the binomial is being drawn
 def birth_event(self):
       self.methylated[self.currstep] = 0
       #calculate hemimethylated and draw a random binomial to determine how many become unmethylated
