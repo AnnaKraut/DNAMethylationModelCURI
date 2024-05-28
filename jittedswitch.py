@@ -1,5 +1,6 @@
 import numpy as np
 from numba import jit
+from numba import njit
 
 # Jitted Switch
 # This file is a refactoring of the gillespie simulation that's designed to allow it to run better with jit compiling.
@@ -10,31 +11,33 @@ from numba import jit
 #This code does not support debugging toggles, and doesn't print output at the simulation level.
 #Might be some weirdness with rng, see here: https://numba.readthedocs.io/en/stable/reference/pysupported.html
 
+@njit
 def maintenance_rate_collaborative(methylated, unmethylated, population, param_local):
     hemimethylated = population - (methylated + unmethylated)
     return hemimethylated * (param_local[0] + param_local[2]*hemimethylated + param_local[1]*methylated)#r_hm param
     #rate = hemimethylated * (self.params["r_hm"] + self.params["r_hm_h"]*hemimethylated + self.params["r_hm_m"]*methylated)
-
+@njit
 def denovo_rate_collaborative(methylated, unmethylated, population, param_local):
     hemimethylated = population - (methylated + unmethylated)
     return unmethylated * (param_local[3] + param_local[5]*hemimethylated + param_local[4]*methylated)
     #rate = unmethylated * (self.params["r_uh"] + self.params["r_uh_h"]*hemimethylated + self.params["r_uh_m"]*methylated)
-
+@njit
 def demaintenance_rate_collaborative(methylated, unmethylated, population, param_local):
     hemimethylated = population - (methylated + unmethylated)
     return hemimethylated * (param_local[9] + param_local[11]*hemimethylated + param_local[10]*unmethylated)
     #rate = hemimethylated * (self.params["r_hu"] + self.params["r_hu_h"]*hemimethylated + self.params["r_hu_u"]*unmethylated)
-
+@njit
 def demethylation_rate_collaborative(methylated, unmethylated, population, param_local):
     hemimethylated = population - (methylated + unmethylated)
     return methylated * (param_local[6] + param_local[8]*hemimethylated + param_local[7]*unmethylated)
     #rate = methylated * (self.params["r_mh"] + self.params["r_mh_h"]*hemimethylated + self.params["r_mh_u"]*unmethylated)
-
+@njit
 def birth_rate(param_local):
       return param_local[12]
 
 #Helper function that finds the state of the model for given population
 #1 means >70% methylated, -1 means >70% unmethylated, 0 means somewhere in the middle
+@njit
 def find_state(methylated, unmethylated, population):
       if (methylated/ population) > 0.7:
             return 1
@@ -43,6 +46,7 @@ def find_state(methylated, unmethylated, population):
       return 0
 
 #This function defines the events that can happen. It's equivalent to the event list in config.py
+@njit
 def events(methylated, unmethylated, totalpop, i_local, rng_local):
     #maintenance event
     if i_local == 0:
@@ -63,6 +67,7 @@ def events(methylated, unmethylated, totalpop, i_local, rng_local):
         return 0, (unmethylated + newly_unmethylated)
 
 #Main function
+@njit
 def GillespieSwitchFun(steps,param_arr,totalpop,pop_methyl, pop_unmethyl, SwitchDirection):
     currstep = 1
     methylated_arr = np.zeros(steps)
