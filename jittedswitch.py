@@ -8,9 +8,9 @@ import matplotlib.pyplot as plt
 # to do this, we need to convert the python objects into simpler objects (ideally numpy arrays) that play better with jit/numba.
 # Specifically, config files might need to be defined in the file instead of imported, and dictionaries will be converted into lists
 # also, there will be much less room for object-oriented code :(
-#We will use prange across different simulations (since each simulation is seperate, can be executed in parallel)
-#This code does not support debugging toggles, and doesn't print output at the simulation level.
-#Might be some weirdness with rng, see here: https://numba.readthedocs.io/en/stable/reference/pysupported.html
+# We will use prange across different simulations (since each simulation is seperate, can be executed in parallel)
+# This code does not support debugging toggles, and doesn't print output at the simulation level.
+# Might be some weirdness with rng, see here: https://numba.readthedocs.io/en/stable/reference/pysupported.html
 
 @njit
 def maintenance_rate_collaborative(methylated, unmethylated, population, param_local):
@@ -68,18 +68,16 @@ def events(methylated, unmethylated, totalpop, i_local, rng_local):
         newly_unmethylated = rng_local.binomial(hemimethylated, 0.5)
         return 0, (unmethylated + newly_unmethylated)
 
-#Main function
 @njit
-# (trial_max_length, input_arr, totalpop, methylatedpop, unmethylatedpop, SwitchDirection,generators[step]
 def GillespieSwitchFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, SwitchDirection, rng):
     methylated_arr = np.zeros(steps)
     unmethylated_arr = np.zeros(steps)
     methylated_arr[0] = pop_methyl
     unmethylated_arr[0] = pop_unmethyl
-    time_arr = np.zeros(steps) #initialize first value to zero?
-    time_arr[0] = 0
+    time_arr = np.zeros(steps) 
+    time_arr[0] = 0 #initialize first value to zero to stay in sync with (un)methylated_arr
     start_state = find_state(pop_methyl,pop_unmethyl, totalpop)
-    rates = np.zeros(5)
+    rates = np.zeros(5) #using numpy array may or may not be optimal here - possible refactor point
 
     #main loop - each generation or step is one iteration of this loop
     for i in range(1, steps): #start at 1, since the first step is given by pop_methyl/pop_unmethyl
@@ -91,15 +89,12 @@ def GillespieSwitchFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, Swi
         rates[3] = demethylation_rate_collaborative(methylated_arr[i-1],unmethylated_arr[i-1],totalpop,param_arr)
         rates[4] = birth_rate(param_arr)
         prob_sum = np.sum(rates)
-        # print("rates", rates)
 
         #find the expected wait for an event to happen
         tau = rng.exponential(scale = 1/prob_sum)
         time_arr[i] = tau + time_arr[i-1]
-        # print("tau: ", tau)
 
         #normalize the rates to be within (0,1)
-        #this implicitly tries to divide an array by an int - might need to convert something to a float
         normalized_rates= rates / prob_sum
 
         #select which event happens by comparing the normalized rates to a random variable
@@ -107,12 +102,11 @@ def GillespieSwitchFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, Swi
         uniform = rng.uniform()
         for event_number in range(5):
             if uniform < normalized_rates[event_number] + sum_so_far:
-                #This multiple assignnment might not be allowed in numba
                 methylated_arr[i], unmethylated_arr[i] = events(methylated_arr[i-1], unmethylated_arr[i-1], totalpop,event_number,rng)
-                # print("we did event", i, " using values of ", methylated_arr[i-1], unmethylated_arr[i-1], " and got ", methylated_arr[i], unmethylated_arr[i])
                 break
             else:
                 sum_so_far += normalized_rates[event_number]
+
         # decide which state we are in - if we switched, this block will terminate the program
         curr_state = find_state(methylated_arr[i], unmethylated_arr[i], totalpop)
         if curr_state == 0:
@@ -122,11 +116,6 @@ def GillespieSwitchFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, Swi
                 start_state = curr_state
                 continue
             return time_arr[i]
-
-    #we timed out - return a negative value to indicate this was a timeout
-    # plt.plot(time_arr, methylated_arr)
-    # plt.plot(time_arr, unmethylated_arr)
-    # plt.show()
-    # plt.close()
-    # return time_arr, methylated_arr, unmethylated_arr
+        
+    #we timed out - return a negative value to indicate that this isn't a normal run.
     return -1 * time_arr[i]
