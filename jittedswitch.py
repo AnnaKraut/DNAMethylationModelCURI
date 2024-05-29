@@ -1,6 +1,7 @@
 import numpy as np
 from numba import jit
 from numba import njit
+import matplotlib.pyplot as plt
 
 # Jitted Switch
 # This file is a refactoring of the gillespie simulation that's designed to allow it to run better with jit compiling.
@@ -46,6 +47,7 @@ def find_state(methylated, unmethylated, population):
       return 0
 
 #This function defines the events that can happen. It's equivalent to the event list in config.py
+#i_local indicates which loop called this function - that is, i_local indicates which event we're doing.
 @njit
 def events(methylated, unmethylated, totalpop, i_local, rng_local):
     #maintenance event
@@ -68,52 +70,50 @@ def events(methylated, unmethylated, totalpop, i_local, rng_local):
 
 #Main function
 @njit
-def GillespieSwitchFun(steps,param_arr,totalpop,pop_methyl, pop_unmethyl, SwitchDirection):
-    currstep = 1
+# (trial_max_length, input_arr, totalpop, methylatedpop, unmethylatedpop, SwitchDirection,generators[step]
+def GillespieSwitchFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, SwitchDirection, rng):
     methylated_arr = np.zeros(steps)
     unmethylated_arr = np.zeros(steps)
     methylated_arr[0] = pop_methyl
     unmethylated_arr[0] = pop_unmethyl
     time_arr = np.zeros(steps) #initialize first value to zero?
     time_arr[0] = 0
-    param_count = len(param_arr)
-    rng = np.random.default_rng()
     start_state = find_state(pop_methyl,pop_unmethyl, totalpop)
     rates = np.zeros(5)
 
     #main loop - each generation or step is one iteration of this loop
     for i in range(1, steps): #start at 1, since the first step is given by pop_methyl/pop_unmethyl
-        dynamic_rates = np.zeros_like(param_arr)
-        relative_probabilities = np.zeros_like(param_arr)
 
         #find the rates of each event for the current parameters
-        rates[0] = maintenance_rate_collaborative(methylated_arr[i],unmethylated_arr[i],param_arr)
-        rates[1] = denovo_rate_collaborative(methylated_arr[i],unmethylated_arr[i],param_arr)
-        rates[2] = demaintenance_rate_collaborative(methylated_arr[i],unmethylated_arr[i],param_arr)
-        rates[3] = demethylation_rate_collaborative(methylated_arr[i],unmethylated_arr[i],param_arr)
+        rates[0] = maintenance_rate_collaborative(methylated_arr[i-1],unmethylated_arr[i-1],totalpop,param_arr)
+        rates[1] = denovo_rate_collaborative(methylated_arr[i-1],unmethylated_arr[i-1],totalpop,param_arr)
+        rates[2] = demaintenance_rate_collaborative(methylated_arr[i-1],unmethylated_arr[i-1],totalpop,param_arr)
+        rates[3] = demethylation_rate_collaborative(methylated_arr[i-1],unmethylated_arr[i-1],totalpop,param_arr)
         rates[4] = birth_rate(param_arr)
         prob_sum = np.sum(rates)
+        # print("rates", rates)
 
         #find the expected wait for an event to happen
         tau = rng.exponential(scale = 1/prob_sum)
         time_arr[i] = tau + time_arr[i-1]
+        # print("tau: ", tau)
 
         #normalize the rates to be within (0,1)
         #this implicitly tries to divide an array by an int - might need to convert something to a float
-        rates /= prob_sum
+        normalized_rates= rates / prob_sum
 
         #select which event happens by comparing the normalized rates to a random variable
         sum_so_far = 0
         uniform = rng.uniform()
-        for i in range(5):
-            if uniform < rates[i] + sum_so_far:
+        for event_number in range(5):
+            if uniform < normalized_rates[event_number] + sum_so_far:
                 #This multiple assignnment might not be allowed in numba
-                methylated_arr[i], unmethylated_arr[i] = events(methylated_arr[i], unmethylated_arr[i], totalpop,i,rng)
+                methylated_arr[i], unmethylated_arr[i] = events(methylated_arr[i-1], unmethylated_arr[i-1], totalpop,event_number,rng)
+                # print("we did event", i, " using values of ", methylated_arr[i-1], unmethylated_arr[i-1], " and got ", methylated_arr[i], unmethylated_arr[i])
                 break
             else:
-                sum_so_far += rates[i]
-        
-        #decide which state we are in - if we switched, this block will terminate the program
+                sum_so_far += normalized_rates[event_number]
+        # decide which state we are in - if we switched, this block will terminate the program
         curr_state = find_state(methylated_arr[i], unmethylated_arr[i], totalpop)
         if curr_state == 0:
             continue
@@ -122,6 +122,11 @@ def GillespieSwitchFun(steps,param_arr,totalpop,pop_methyl, pop_unmethyl, Switch
                 start_state = curr_state
                 continue
             return time_arr[i]
-        
+
     #we timed out - return a negative value to indicate this was a timeout
+    # plt.plot(time_arr, methylated_arr)
+    # plt.plot(time_arr, unmethylated_arr)
+    # plt.show()
+    # plt.close()
+    # return time_arr, methylated_arr, unmethylated_arr
     return -1 * time_arr[i]
