@@ -2,11 +2,9 @@ import numpy as np
 import jittedswitch
 import matplotlib.pyplot as plt
 import scipy.stats as stats
-import time
 import numba
 from numba import prange
-from numba import types
-from numba.typed import Dict
+
 #-----------parameterization-----------
 #TODO: add easier ways for users to input data
 #user should enter begin, end, step for the parameter they want to change.
@@ -26,10 +24,6 @@ unmethylatedpop = 10
 #SwitchDirection - a simulation terminates when it reaches this state
 SwitchDirection = -1 #1 -> mostly methylated, -1-> mostly unmethylated
 #-----------Rates Dictionary---------
-default_parameters = Dict.empty(
-    key_type=types.unicode_type,
-    value_type=types.float64
-)
 default_parameters = {"r_hm": 0.5,          #0
                       "r_hm_m": 20/totalpop, #1
                       "r_hm_h": 10/totalpop, #2
@@ -76,41 +70,23 @@ step_size = round((param_end_val-param_begin_val)/step_count, 5)
 steps_to_test = step_count
 
 #-----------simulation-----------
-
-#break all of the computation into a seperate, jittable function? 
-#preprocessing step to identify which index in the dictionary we are changing
-#feed in a list, a step size and step amount. Then, for each batch, compute the new step (from step size * index) and change the input list. 
-#(DO NOT do a +=, calculate from step size * index) this way we avoid needing dictionaries and can parallelize.
-
-#call batches in parallel with "@numba.jit(parallel=True)"
-#call things within a batch in parallel too maybe> just for fun
-#actually - if we call batches in parallel, we don't need to call things within a batch in parallel, meaning we can implement anna's idea to kill runs with high timeout rates
-#run things within a batch sequentially, and if we compute with a specific confidence that the batch has high timeouts, we kill the batch
-#My laptop only has 10 cores for example, and even clusters probably wont have over a hundred, so likely batch-level parallelism is fine.
-
-#each batch outputs into an array, which is indexed into a bigger array (DO NOT APPEND - THIS CAUSES ISSUES WITH PARALLELIZING)
-#compute should return one massive array, which is post-processed by another function as needed
-#maybe later we can try post-processing inside the loop, which would save space, but potentially cause parallelization issues.
 @numba.jit(nopython=True, parallel=True)
 def main(rngs):
     output_array = np.zeros(shape=(step_count, batch_size))
+    #this loop runs in parallel because it uses prange() instead of range() - keep this in mind when debugging it!
     for step in prange(step_count):
-        valid_size = 0
         #make a copy of the default parameters, change the parameter we want to study
         temp_arr = default_arr.copy()
         temp_arr[index_to_change] = param_begin_val + (step*step_size)
-        print(temp_arr)
-
+        print("Testing parameters: ", temp_arr)
 
         #run a batch of identical gillespie algorithms, store the results in output_array[step]
         for i in range(batch_size):
             output_array[step][i] = jittedswitch.GillespieSwitchFun(trial_max_length, temp_arr, totalpop, methylatedpop, unmethylatedpop, SwitchDirection,rngs[step])
-            if output_array[step][i] >= 0: #this result was valid
-                valid_size += 1
     return output_array
+
         # plt.close() #ensure the previous graph is done
         # plt.hist(valid_array, bins=200)
-
         # #generate strings, we will concatenate these into a single title string for the graphs
         # param_string = "parameter: " + str(param_to_change) +  " = " + str(steps_to_test[step]) + " -> Exponential Parameter = " + str(exponential_parameters[step])
         # step_string = "Step " + str(step+1) + "/" + str(step_count)
@@ -128,7 +104,8 @@ timeouts = [0] * step_count
 #list comprehension that creates an array of the values we tested for our chosen parameter
 steps_to_test = [step_size * i for i in range(step_count)]
 
-#experimental - generate an array for rng generators
+#create an array of random number generators that we will pass into our function
+#this makes it easier to reproduce, and also keeps Numba happy.
 generators = [None]*step_count
 for i in range(step_count):
     generators[i] = np.random.default_rng()
@@ -139,6 +116,7 @@ output = main(generators)
 
 #-----------postprocessing-----------
 
+#go through the output row-by-row and find the exponential parameters
 for step in range(step_count):
     #this list comprehension makes an array of all the positive values in a given row of output_array
     valid_array = [output[step][index] for index in range(batch_size) if output[step][index] >= 0]
