@@ -5,17 +5,18 @@ import scipy.stats as stats
 import numba
 from numba import prange
 
+
 #-----------parameterization-----------
 #TODO: add easier ways for users to input data
 #user should enter begin, end, step for the parameter they want to change.
 param_begin_val = 0.5
-param_end_val = 3
-step_count = 50
+param_end_val = 20
+step_count = 150
 # define a parameter to vary - must be in the parameters dictionary - this should probably be selectable on command line
 param_to_change = "birth_rate"
-#define batch size - how many different runs should we average for each step? (default 10 for testing, should increase)
+#define batch size - how many different runs should we average for each step? 
 batch_size = 5000
-#define length of trials (default 1000) - they will usually stop earlier, this is more for allocating space
+#define length of trials in steps (default 1000) - they will usually stop earlier, this is more for allocating space
 trial_max_length = 10000
 #define starting population
 totalpop = 100
@@ -98,8 +99,13 @@ def main(rngs):
     
 #-----------setup-----------
 
-#generate the arrays for our output
+#generate the arrays for our output - default is negative to show these are undesirable results - maybe change to none instead
 exponential_parameters = [None] * step_count
+gamma_shape = [None] * step_count
+gamma_location = [None] * step_count
+gamma_scale = [None] * step_count
+exponential_KS = [None] * step_count
+gamma_KS = [None] * step_count
 timeouts = [0] * step_count
 #list comprehension that creates an array of the values we tested for our chosen parameter
 steps_to_test = [step_size * i for i in range(step_count)]
@@ -113,28 +119,47 @@ for i in range(step_count):
 #-----------Call simulation-----------
 output = main(generators)
 
-
 #-----------postprocessing-----------
 
 #go through the output row-by-row and find the exponential parameters
 for step in range(step_count):
     #this list comprehension makes an array of all the positive values in a given row of output_array
     valid_array = [output[step][index] for index in range(batch_size) if output[step][index] >= 0]
-    #only guess parameter if more than half of the runs finished
-    if len(valid_array) > batch_size/2:
-        exponential_parameters[step] = stats.expon.fit(valid_array,floc=0)[1]
-    else: #otherwise, mark the parameter as negative, meaning its a no go
-        exponential_parameters[step] = -1
+    #this list comprehension counts up all the negative (meaning timed out) values
+    raw_timeouts = batch_size - len(valid_array)
+    timeouts[step] = 10*(raw_timeouts/batch_size) #scale the timeouts to fit with the other info on the graph
 
-    print("predicted exponential parameter: ", exponential_parameters[step])
-    print("timed-out simulations: " + str(batch_size-len(valid_array)) + " out of " + str(batch_size))
-    timeouts[step] = batch_size-len(valid_array)
+
+    #guess parameters only if less than half our simulations timed out
+    if len(valid_array) > batch_size/2:
+        #fit distributions to the data
+        exponential_parameters[step] = stats.expon.fit(valid_array,floc=0)[1]
+        gamma_shape[step],gamma_location[step],gamma_scale[step]=stats.gamma.fit(valid_array)
+
+        #calculate error for parameters with Kolmogorov-Smirnov test
+        #TODO: add args for expon
+        exponential_KS[step] = 10 * (stats.kstest(valid_array, stats.expon.cdf, N=len(valid_array)).statistic)
+        print(exponential_KS[step])
+        #TODO: 
+        gamma_KS[step] = 10 * (stats.kstest(valid_array, stats.gamma.cdf, N=len(valid_array), args=(gamma_shape[step],0,gamma_scale[step])).statistic)
+        print(gamma_KS[step])
+
+    # print("predicted exponential parameter: ", exponential_parameters[step])
+    print("predicted gamma shape parameter: ", gamma_shape[step])
+    print("timed-out simulations: " + str(timeouts[step]) + " out of " + str(batch_size))
+
+#-----------graphing-----------
 
 plt.close()
 final_label = "Switching times from methylated to unmethylated as birth rate changes \n Population = 100"
 run_stats = "Batches of " + str(batch_size) + ", running for maximum of " + str(trial_max_length) + " steps each"
 plt.plot(steps_to_test, exponential_parameters,label="exponential parameters")
-# plt.plot(steps_to_test,timeouts, label = "timed out simulations")
+plt.plot(steps_to_test,timeouts, label = "proportion timed out, scaled by 10x")
+plt.plot(steps_to_test, exponential_KS, label="Exponential KS error, scaled by 10x")
+plt.plot(steps_to_test, gamma_shape,label="Gamma shape")
+plt.plot(steps_to_test, gamma_location,label="Gamma location")
+plt.plot(steps_to_test, gamma_scale,label="Gamma scale")
+plt.plot(steps_to_test, gamma_KS, label="Gamma KS error, scaled by 10x")
 plt.title(final_label + "\n" + run_stats)
 plt.xlabel('Value of parameter '+ param_to_change)
 plt.ylabel('Exponential parameter of switching time distribution')
