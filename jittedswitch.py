@@ -13,36 +13,36 @@ import matplotlib.pyplot as plt
 # Might be some weirdness with rng, see here: https://numba.readthedocs.io/en/stable/reference/pysupported.html
 
 @njit
-def maintenance_rate_collaborative(methylated, unmethylated, population, param_local):
-    hemimethylated = population - (methylated + unmethylated)
+def maintenance_rate_collaborative(methylated, unmethylated, site_count, param_local):
+    hemimethylated = site_count - (methylated + unmethylated)
     return hemimethylated * (param_local[0] + param_local[2]*hemimethylated + param_local[1]*methylated)#r_hm param
     #rate = hemimethylated * (self.params["r_hm"] + self.params["r_hm_h"]*hemimethylated + self.params["r_hm_m"]*methylated)
 @njit
-def denovo_rate_collaborative(methylated, unmethylated, population, param_local):
-    hemimethylated = population - (methylated + unmethylated)
+def denovo_rate_collaborative(methylated, unmethylated, site_count, param_local):
+    hemimethylated = site_count - (methylated + unmethylated)
     return unmethylated * (param_local[3] + param_local[5]*hemimethylated + param_local[4]*methylated)
     #rate = unmethylated * (self.params["r_uh"] + self.params["r_uh_h"]*hemimethylated + self.params["r_uh_m"]*methylated)
 @njit
-def demaintenance_rate_collaborative(methylated, unmethylated, population, param_local):
-    hemimethylated = population - (methylated + unmethylated)
+def demaintenance_rate_collaborative(methylated, unmethylated, site_count, param_local):
+    hemimethylated = site_count - (methylated + unmethylated)
     return hemimethylated * (param_local[9] + param_local[11]*hemimethylated + param_local[10]*unmethylated)
     #rate = hemimethylated * (self.params["r_hu"] + self.params["r_hu_h"]*hemimethylated + self.params["r_hu_u"]*unmethylated)
 @njit
-def demethylation_rate_collaborative(methylated, unmethylated, population, param_local):
-    hemimethylated = population - (methylated + unmethylated)
+def demethylation_rate_collaborative(methylated, unmethylated, site_count, param_local):
+    hemimethylated = site_count - (methylated + unmethylated)
     return methylated * (param_local[6] + param_local[8]*hemimethylated + param_local[7]*unmethylated)
     #rate = methylated * (self.params["r_mh"] + self.params["r_mh_h"]*hemimethylated + self.params["r_mh_u"]*unmethylated)
 @njit
 def birth_rate(param_local):
       return param_local[12]
 
-#Helper function that finds the state of the model for given population
+#Helper function that finds the state of the model for given site_count
 #1 means >70% methylated, -1 means >70% unmethylated, 0 means somewhere in the middle
 @njit
-def find_state(methylated, unmethylated, population):
-      if (methylated/ population) > 0.7:
+def find_state(methylated, unmethylated, site_count):
+      if (methylated/ site_count) > 0.7:
             return 1
-      if (unmethylated/ population) > 0.7:
+      if (unmethylated/ site_count) > 0.7:
             return -1
       return 0
 
@@ -72,13 +72,18 @@ def events(methylated, unmethylated, totalpop, i_local, rng_local):
 def GillespieSwitchFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, SwitchDirection, rng):
     methylated_arr = np.zeros(steps)
     unmethylated_arr = np.zeros(steps)
-    methylated_arr[0] = pop_methyl
+    methylated_arr[0] = pop_methyl 
     unmethylated_arr[0] = pop_unmethyl
     time_arr = np.zeros(steps) 
     time_arr[0] = 0 #initialize first value to zero to stay in sync with (un)methylated_arr
     start_state = find_state(pop_methyl,pop_unmethyl, totalpop)
     rates = np.zeros(5) #using numpy array may or may not be optimal here - possible refactor point
 
+
+    #TODO: rewrite this for loop?
+    #TODO: Consider inlining
+    #TODO: consider using numpy randomstate?
+    #Maybe don't use np.sum()????
     #main loop - each generation or step is one iteration of this loop
     for i in range(1, steps): #start at 1, since the first step is given by pop_methyl/pop_unmethyl
 
@@ -88,14 +93,14 @@ def GillespieSwitchFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, Swi
         rates[2] = demaintenance_rate_collaborative(methylated_arr[i-1],unmethylated_arr[i-1],totalpop,param_arr)
         rates[3] = demethylation_rate_collaborative(methylated_arr[i-1],unmethylated_arr[i-1],totalpop,param_arr)
         rates[4] = birth_rate(param_arr)
-        prob_sum = np.sum(rates)
+        rate_sum = np.sum(rates)
 
         #find the expected wait for an event to happen
-        tau = rng.exponential(scale = 1/prob_sum)
+        tau = rng.exponential(scale = 1/rate_sum)
         time_arr[i] = tau + time_arr[i-1]
 
         #normalize the rates to be within (0,1)
-        normalized_rates= rates / prob_sum
+        normalized_rates= rates / rate_sum
 
         #select which event happens by comparing the normalized rates to a random variable
         sum_so_far = 0
@@ -109,12 +114,7 @@ def GillespieSwitchFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, Swi
 
         # decide which state we are in - if we switched, this block will terminate the program
         curr_state = find_state(methylated_arr[i], unmethylated_arr[i], totalpop)
-        if curr_state == 0:
-            continue
-        elif curr_state == SwitchDirection:
-            if start_state == 0:
-                start_state = curr_state
-                continue
+        if curr_state == SwitchDirection:
             return time_arr[i]
         
     #we timed out - return a negative value to indicate that this isn't a normal run.
