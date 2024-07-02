@@ -9,3 +9,4 @@
 - jitted code can call other jitted code
 - nopython parameter (or njit) will essentially force the code to be fully optimized - it will return an error if it can't be optimized, instead of running slowly
 - passing functions is iffy at besthttps://stackoverflow.com/questions/59573365/using-a-function-object-as-an-argument-for-numba-njit-function 
+- A guide to using CUDA - possibly even more speedups, especially given GPU access - is here https://curiouscoding.nl/posts/numba-cuda-speedup/
