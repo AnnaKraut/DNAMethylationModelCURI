@@ -1,3 +1,8 @@
+import numpy as np
+from numba import jit
+from numba import njit
+import matplotlib.pyplot as plt
+
 """
 This file represents a long-run version of the gillespie algorithm. 
 
@@ -7,11 +12,6 @@ Input: steps, parameter list, target parameter, parameter start, parameter end, 
 Output: array that returns the proportion of time spent in each of the bin_count**2 bins.
 
 """
-
-import numpy as np
-from numba import jit
-from numba import njit
-import matplotlib.pyplot as plt
 
 @njit
 def maintenance_rate_collaborative(methylated, unmethylated, site_count, param_local):
@@ -40,8 +40,11 @@ def birth_rate(param_local):
 #Helper function that finds the state of the model for given site_count
 #1 means >70% methylated, -1 means >70% unmethylated, 0 means somewhere in the middle
 @njit
-def classify_state(methylated, unmethylated, site_count, bin_count):
-      methyl_proportion = methylated/site_count
+def classify_state(methylated, unmethylated, site_count):
+      if methylated > 0.7*site_count:
+          return 1
+      elif unmethylated > 0.7*site_count:
+          return -1
       return 0
 
 #This function defines the events that can happen. It's equivalent to the event list in config.py
@@ -67,15 +70,20 @@ def events(methylated, unmethylated, totalpop, i_local, rng_local):
         return 0, (unmethylated + newly_unmethylated)
 
 @njit
-def GillespieSwitchFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, SwitchDirection, rng):
+def GillespieLongRunFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, rng):
     methylated_arr = np.zeros(steps)
     unmethylated_arr = np.zeros(steps)
     methylated_arr[0] = pop_methyl 
     unmethylated_arr[0] = pop_unmethyl
     time_arr = np.zeros(steps) 
+    state_arr = np.zeros(steps)
     time_arr[0] = 0 #initialize first value to zero to stay in sync with (un)methylated_arr
-    start_state = find_state(pop_methyl,pop_unmethyl, totalpop)
+    state_arr = classify_state(pop_methyl,pop_unmethyl, totalpop)
     rates = np.zeros(5) #using numpy array may or may not be optimal here - possible refactor point
+    #define our three amounts of cumulative time spent
+    methyl_cumulative = 0
+    unmethyl_cumulative = 0
+    middle_cumulative = 0
 
 
     #TODO: rewrite this for loop?
@@ -110,13 +118,20 @@ def GillespieSwitchFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, Swi
             else:
                 sum_so_far += normalized_rates[event_number]
 
-        # decide which state we are in - if we switched, this block will terminate the program
-        curr_state = find_state(methylated_arr[i], unmethylated_arr[i], totalpop)
-        if curr_state == SwitchDirection:
-            return time_arr[i]
+        #TODO: clarify whether we measure tau, or the tau of the last step (introduce a temp variable if so)
+        #classify our state, and increment the related cumulative sum
+        curr_state = classify_state(methylated_arr[i], unmethylated_arr[i], totalpop)
+        if curr_state == 1:
+            methyl_cumulative += tau
+        elif curr_state == -1:
+            unmethyl_cumulative += tau
+        else:
+            middle_cumulative += tau
+
+
         
     #we timed out - return a negative value to indicate that this isn't a normal run.
-    return -1 * time_arr[i]
+    return (methyl_cumulative, unmethyl_cumulative, middle_cumulative, methylated_arr, unmethylated_arr, time_arr)
 
 
 
