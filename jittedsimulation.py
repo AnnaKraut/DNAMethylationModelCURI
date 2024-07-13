@@ -11,8 +11,8 @@ from numba import prange
 #TODO: add easier ways for users to input data
 #user should enter begin, end, step for the parameter they want to change.
 param_begin_val = 0
-param_end_val = 3
-step_count = 50
+param_end_val = 500
+step_count = 100
 # define a parameter to vary - must be in the parameters dictionary - this should probably be selectable on command line
 param_to_change = "birth_rate"
 #define batch size - how many different runs should we average for each step? 
@@ -21,10 +21,10 @@ batch_size = 5000
 trial_max_length = 10000
 #define starting population
 totalpop = 100
-methylatedpop = 10
-unmethylatedpop = 90
+methylatedpop = 90
+unmethylatedpop = 10
 #SwitchDirection - a simulation terminates when it reaches this state
-SwitchDirection = 1 #1 -> mostly methylated, -1-> mostly unmethylated
+SwitchDirection = -1 #1 -> mostly methylated, -1-> mostly unmethylated
 #-----------Rates Dictionary---------
 default_parameters = {"r_hm": 0.5,          #0
                       "r_hm_m": 20/totalpop, #1
@@ -108,6 +108,7 @@ gamma_shape = [None] * step_count
 gamma_location = [None] * step_count
 gamma_scale = [None] * step_count
 gamma_KS = [None] * step_count
+inverse_gamma_scale = [None] * step_count
 
 normal_KS = [None] * step_count
 normal_sd = [None] * step_count
@@ -115,6 +116,9 @@ normal_mean = [None] * step_count
 
 timeouts = [0] * step_count
 empirical_mean = [None] * step_count
+
+line = [None] * step_count
+
 
 #list comprehension that creates an array of the values we tested for our chosen parameter
 step_array = [step_size * i for i in range(step_count)]
@@ -138,13 +142,17 @@ for step in range(step_count):
     raw_timeouts = batch_size - len(valid_array)
     timeouts[step] = 10*(raw_timeouts/batch_size) #scale the timeouts to fit with the other info on the graph
 
+    #create a line representing the parameter we are varying on the y axis
+    line[step] = step_array[step]
+
 
     #guess parameters only if less than half our simulations timed out
     if len(valid_array) > batch_size/2:
         #fit distributions to the data
         exponential_parameters[step] = stats.expon.fit(valid_array,floc=0)[1]
 
-        # gamma_shape[step],gamma_location[step],gamma_scale[step]=stats.gamma.fit(valid_array)
+        gamma_shape[step],gamma_location[step],gamma_scale[step]=stats.gamma.fit(valid_array,floc=0)
+        inverse_gamma_scale[step] = 1/gamma_scale[step]
 
         normal_mean[step], normal_sd[step] =  stats.norm.fit(valid_array,)
         print(f'Normal mean is {normal_mean[step]} and S.D. is {normal_sd[step]}')
@@ -155,10 +163,10 @@ for step in range(step_count):
         #note that we lock the first argument, location, to 0 for the exponential distribution
         exponential_KS[step] = 10 * (stats.kstest(valid_array, 'expon', N=len(valid_array), args=(0,exponential_parameters[step])).statistic)
         print(exponential_KS[step])
-        normal_KS[step] = 10 * (stats.kstest(valid_array, 'norm', N=len(valid_array), args=(normal_mean[step], normal_sd[step])).statistic)
-        print(exponential_KS[step])
-        # gamma_KS[step] = 10 * (stats.kstest(valid_array, stats.gamma.cdf, N=len(valid_array), args=(gamma_shape[step],0,gamma_scale[step])).statistic)
-        # print(gamma_KS[step])
+        # normal_KS[step] = 10 * (stats.kstest(valid_array, 'norm', N=len(valid_array), args=(normal_mean[step], normal_sd[step])).statistic)
+        # print(normal_KS[step])
+        gamma_KS[step] = 10 * (stats.kstest(valid_array, stats.gamma.cdf, N=len(valid_array), args=(gamma_shape[step],0,gamma_scale[step])).statistic)
+        print(gamma_KS[step])
 
     # print("predicted exponential parameter: ", exponential_parameters[step])
     # print("predicted gamma shape parameter: ", gamma_shape[step])
@@ -166,22 +174,27 @@ for step in range(step_count):
 
 #-----------graphing-----------
 
+
+#convert all these to f strings
 plt.close()
-final_label = "Switching times from unmethylated to methylated as birth rate changes \n Population = 100"
+final_label = "Switching times from unmethylated to methylated as birth rate changes \n Population = " + str(totalpop)
 run_stats = "Batches of " + str(batch_size) + ", running for maximum of " + str(trial_max_length) + " steps each"
 plt.plot(step_array, exponential_parameters,label="exponential parameters", linestyle='dashed')
 plt.plot(step_array,timeouts, label = "proportion timed out, scaled by 10x")
 plt.plot(step_array, exponential_KS, label="Exponential KS error, scaled by 10x")
 
-# plt.plot(step_array, gamma_shape,label="Gamma shape")
-# plt.plot(step_array, gamma_location,label="Gamma location")
-# plt.plot(step_array, gamma_scale,label="Gamma scale")
-# plt.plot(step_array, gamma_KS, label="Gamma KS error, scaled by 10x")
+plt.plot(step_array, gamma_shape,label="Gamma shape")
+plt.plot(step_array, gamma_location,label="Gamma location")
+plt.plot(step_array, gamma_scale,label="Gamma scale")
+plt.plot(step_array, inverse_gamma_scale,label = "1/Gamma scale",linestyle='dashed')
+plt.plot(step_array, gamma_KS, label="Gamma KS error, scaled by 10x")
+plt.plot(step_array, line, linestyle='dotted', label = 'Birth Rate')
 
-plt.plot(step_array, normal_mean, label='Normal mean',marker='.',linestyle='')
-plt.plot(step_array, normal_sd, label='Normal S.D.',marker='.',linestyle='')
-plt.plot(step_array, normal_KS, label="Normal KS error, scaled by 10x",marker='.',linestyle='')
+# plt.plot(step_array, normal_mean, label='Normal mean',marker='.',linestyle='')
+# plt.plot(step_array, normal_sd, label='Normal S.D.',marker='.',linestyle='')
+# plt.plot(step_array, normal_KS, label="Normal KS error, scaled by 10x",marker='.',linestyle='')
 # plt.plot(step_array, empirical_mean, label='Empirical Mean', linestyle='dashed')
+
 plt.title(final_label + "\n" + run_stats)
 plt.xlabel('Value of parameter '+ param_to_change)
 plt.ylabel('Exponential parameter of switching time distribution')
