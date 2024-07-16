@@ -8,7 +8,7 @@ from numba import prange
 
 
 #-----------parameterization-----------
-trial_max_length = 1000000
+trial_max_length = 10000000
 #define starting population
 totalpop = 100
 methylatedpop = 50
@@ -56,7 +56,7 @@ default_arr = np.array([default_parameters[key] for key in parameter_labels])
 @numba.jit()
 def main(rng):
     #this loop runs in parallel because it uses prange() instead of range() - keep this in mind when debugging it!
-        methyl_time, unmethyl_time, middle_time,methylated_arr, unmethylated_arr, time_arr = longrungillespie.GillespieLongRunFun(trial_max_length, default_arr, totalpop, methylatedpop, unmethylatedpop, rng)
+        methyl_time, unmethyl_time, middle_time,methylated_arr, unmethylated_arr, time_arr, methyl_cumulative_prop, unmethyl_cumulative_prop, sortamethyl_cumulative_prop = longrungillespie.GillespieLongRunFun(trial_max_length, default_arr, totalpop, methylatedpop, unmethylatedpop, rng)
 
         # plt.close() #ensure the previous graph is done
         # plt.hist(valid_array, bins=200)
@@ -68,7 +68,7 @@ def main(rng):
         # plt.savefig("histograms/" + str(time.perf_counter()) + "with" + str(batch_size) + "of" + str(trial_max_length) + '.png')
         # plt.show()
         # plt.close()
-        return methyl_time,unmethyl_time,middle_time,methylated_arr, unmethylated_arr, time_arr
+        return methyl_time,unmethyl_time,middle_time,methylated_arr, unmethylated_arr, time_arr, methyl_cumulative_prop, unmethyl_cumulative_prop, sortamethyl_cumulative_prop
     
 #-----------setup-----------
 
@@ -78,7 +78,7 @@ def main(rng):
 generator = np.random.default_rng()
 
 #-----------Call simulation-----------
-methylated_time, unmethylated_time, time_in_middle, methylated_arr, unmethylated_arr, time_arr = main(generator)
+methylated_time, unmethylated_time, time_in_middle, methylated_arr, unmethylated_arr, time_arr, methyl_cumulative_prop, unmethyl_cumulative_prop, sortamethyl_cumulative_prop = main(generator)
 
 total_time = methylated_time + unmethylated_time + time_in_middle
 methylated_prop = methylated_time/total_time
@@ -95,32 +95,52 @@ print(f"Methylated : {methylated_time}, Unmethylated: {unmethylated_time}, middl
 # plt.legend(loc="upper right")
 # plt.show()
 
-plt.rcParams["figure.figsize"] = (18,6)
-plt.plot(time_arr, methylated_arr, color='pink',ls='', marker=',')
-plt.plot(time_arr, unmethylated_arr, color='black',ls='', marker=',')
-# plt.axvline(x = self.tarr[step])
-plt.xlabel("Time (s)")
-plt.ylabel("Population")
-#if the user wants to save the image, we do that here.
-plt.show()
-plt.close()
+# plt.rcParams["figure.figsize"] = (18,6)
+# plt.plot(time_arr, methylated_arr, color='pink',ls='', marker=',')
+# plt.plot(time_arr, unmethylated_arr, color='black',ls='', marker=',')
+# # plt.axvline(x = self.tarr[step])
+# plt.xlabel("Time (s)")
+# plt.ylabel("Population")
+# #if the user wants to save the image, we do that here.
+# plt.show()
+# plt.close()
 
 
 #bonus
 
-simple_arr = np.zeros_like(methylated_arr)
-xes = list(range(len(methylated_arr)))
+# simple_arr = np.zeros_like(methylated_arr)
 
-for i in range(len(methylated_arr)):
-        if methylated_arr[i] > 0.7*totalpop:
-            simple_arr[i] = 1
-        elif unmethylated_arr[i] > 0.7*totalpop:
-            simple_arr[i] = -1
+
+# for i in range(len(methylated_arr)):
+#         if methylated_arr[i] > 0.7*totalpop:
+#             simple_arr[i] = 1
+#         elif unmethylated_arr[i] > 0.7*totalpop:
+#             simple_arr[i] = -1
 
 # print(xes)
 # print(simple_arr)
-plt.plot(xes, simple_arr,ls='',marker=',')
+# plt.plot(xes, simple_arr,ls='',marker=',')
+# plt.show()
+
+xes = list(range(trial_max_length//100))
+methyl_cumulative_prop_thinned = np.zeros(trial_max_length//100)
+unmethyl_cumulative_prop_thinned = np.zeros(trial_max_length//100)
+sortamethyl_cumulative_prop_thinned = np.zeros(trial_max_length//100)
+middle_cumulative_prop_thinned = np.zeros(trial_max_length//100)
+for i in range(trial_max_length//100):
+      methyl_cumulative_prop_thinned[i] = methyl_cumulative_prop[i*100]
+      unmethyl_cumulative_prop_thinned[i] = unmethyl_cumulative_prop[i*100]
+      sortamethyl_cumulative_prop_thinned[i] = sortamethyl_cumulative_prop[i*100]
+      middle_cumulative_prop_thinned[i] = 1 - (methyl_cumulative_prop_thinned[i] + unmethyl_cumulative_prop_thinned[i] + sortamethyl_cumulative_prop_thinned[i])
+
+
+plt.plot(xes, methyl_cumulative_prop_thinned,label="Methylated")
+plt.plot(xes, unmethyl_cumulative_prop_thinned,label="Unmethylated")
+plt.plot(xes, sortamethyl_cumulative_prop_thinned,label="Sort of methylated")
+plt.plot(xes, middle_cumulative_prop_thinned,label="Transitionary")
+plt.legend(loc='upper right')
 plt.show()
+      
         
 
 
