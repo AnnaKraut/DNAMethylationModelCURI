@@ -39,12 +39,15 @@ def birth_rate(param_local):
 
 #Helper function that finds the state of the model for given site_count
 #1 means >70% methylated, -1 means >70% unmethylated, 0 means somewhere in the middle
+#2 means less than 30% methylated
 @njit
 def classify_state(methylated, unmethylated, site_count):
       if methylated > 0.7*site_count:
           return 1
       elif unmethylated > 0.7*site_count:
           return -1
+      elif unmethylated < 0.3*site_count:
+          return 2
       return 0
 
 #This function defines the events that can happen. It's equivalent to the event list in config.py
@@ -76,14 +79,18 @@ def GillespieLongRunFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, rn
     methylated_arr[0] = pop_methyl 
     unmethylated_arr[0] = pop_unmethyl
     time_arr = np.zeros(steps) 
-    state_arr = np.zeros(steps)
     time_arr[0] = 0 #initialize first value to zero to stay in sync with (un)methylated_arr
-    state_arr = classify_state(pop_methyl,pop_unmethyl, totalpop)
     rates = np.zeros(5) #using numpy array may or may not be optimal here - possible refactor point
-    #define our three amounts of cumulative time spent
+    #define our four amounts of cumulative time spent in different areas. By the end thse will sum to time_arr[-1]
     methyl_cumulative = 0
     unmethyl_cumulative = 0
     middle_cumulative = 0
+    sortamethl_cumulative = 0
+
+    
+    methyl_cumulative_prop = np.zeros(steps) 
+    unmethyl_cumulative_prop = np.zeros(steps)
+    sortamethyl_cumulative_prop = np.zeros(steps)
 
 
     #TODO: rewrite this for loop?
@@ -105,6 +112,22 @@ def GillespieLongRunFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, rn
         tau = rng.exponential(scale = 1/rate_sum)
         time_arr[i] = tau + time_arr[i-1]
 
+        #calculate the time increment after calculating tau but BEFORE calculating the next step
+        curr_state = classify_state(methylated_arr[i-1], unmethylated_arr[i-1], totalpop)
+        if curr_state == 1:
+            methyl_cumulative += tau
+        elif curr_state == -1:
+            unmethyl_cumulative += tau
+        elif curr_state == 2: 
+            sortamethl_cumulative += tau
+        else:
+            middle_cumulative += tau
+
+        #these arrays store the proportion of the sites that are methylated/unmethylated at a given time
+        methyl_cumulative_prop[i] = methyl_cumulative / time_arr[i]
+        unmethyl_cumulative_prop[i] = unmethyl_cumulative/time_arr[i]
+        sortamethyl_cumulative_prop[i] = sortamethl_cumulative/time_arr[i]
+
         #normalize the rates to be within (0,1)
         normalized_rates= rates / rate_sum
 
@@ -120,18 +143,11 @@ def GillespieLongRunFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, rn
 
         #TODO: clarify whether we measure tau, or the tau of the last step (introduce a temp variable if so)
         #classify our state, and increment the related cumulative sum
-        curr_state = classify_state(methylated_arr[i], unmethylated_arr[i], totalpop)
-        if curr_state == 1:
-            methyl_cumulative += tau
-        elif curr_state == -1:
-            unmethyl_cumulative += tau
-        else:
-            middle_cumulative += tau
 
 
         
     #we timed out - return a negative value to indicate that this isn't a normal run.
-    return (methyl_cumulative, unmethyl_cumulative, middle_cumulative, methylated_arr, unmethylated_arr, time_arr)
+    return (methyl_cumulative, unmethyl_cumulative, middle_cumulative, methylated_arr, unmethylated_arr, time_arr, methyl_cumulative_prop, unmethyl_cumulative_prop, sortamethyl_cumulative_prop)
 
 
 
