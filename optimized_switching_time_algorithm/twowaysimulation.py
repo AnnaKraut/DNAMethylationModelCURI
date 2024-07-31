@@ -1,5 +1,5 @@
 import numpy as np
-import optimized_switching_time_algorithm.jittedswitch as jittedswitch
+import jittedswitch as jittedswitch
 import matplotlib.pyplot as plt
 import scipy.stats as stats
 import numba
@@ -12,7 +12,7 @@ from numba import prange
 #user should enter begin, end, step for the parameter they want to change.
 param_begin_val = 0
 param_end_val = 3
-step_count = 100
+step_count = 10
 # define a parameter to vary - must be in the parameters dictionary - this should probably be selectable on command line
 param_to_change = "birth_rate"
 #define batch size - how many different runs should we average for each step? 

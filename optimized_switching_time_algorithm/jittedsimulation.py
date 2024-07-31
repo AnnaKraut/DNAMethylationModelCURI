@@ -1,5 +1,5 @@
 import numpy as np
-import optimized_switching_time_algorithm.jittedswitch as jittedswitch
+import jittedswitch as jittedswitch
 import matplotlib.pyplot as plt
 import scipy.stats as stats
 import numba
