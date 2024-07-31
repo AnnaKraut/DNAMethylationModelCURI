@@ -1,5 +1,5 @@
 import numpy as np
-import gillespieswitch
+import switching_time_algorithm.gillespieswitch as gillespieswitch
 import matplotlib.pyplot as plt
 import scipy.stats as stats
 import time
@@ -17,13 +17,13 @@ import time
 #-----------parameterization-----------
 #TODO: add easier ways for users to input data
 #user should enter begin, end, step for the parameter they want to change.
-param_begin_val = 0.5
-param_end_val = 2
-param_step_size = 0.05
+param_begin_val = 1
+param_end_val = 1.1
+param_step_size = 0.1
 # define a parameter to vary - must be in the parameters dictionary - this should probably be selectable on command line
 param_to_change = "birth_rate"
 #define batch size - how many different runs should we average for each step? (default 10 for testing, should increase)
-batch_size = 5
+batch_size = 5000
 #define length of trials (default 1000) - they will usually stop earlier, this is more for allocating space
 trial_max_length = 10000
 #define starting population
@@ -34,7 +34,7 @@ unmethylatedpop = 10
 SwitchDirection = -1 #1 -> mostly methylated, -1-> mostly unmethylated
 #set the debug toggle
 debug = False
-batch_debug = False
+batch_debug = True
 FinishAndSave = False
 #-----------Rates Dictionary---------
 default_parameters = {"r_hm": 0.5,#changed this - was 0.5
@@ -56,6 +56,7 @@ default_parameters = {"r_hm": 0.5,#changed this - was 0.5
 #generate an array of parameters to test, between the values that the user specified
 steps_to_test = np.arange(param_begin_val, param_end_val, param_step_size)
 step_count = len(steps_to_test)
+print(steps_to_test) 
 
 #generate the arrays for our output
 output_array = []
@@ -110,7 +111,9 @@ for step in range(len(steps_to_test)):
         batch_string = "Batch of " + str(batch_size) + ", running for " + str(trial_max_length) + " steps each " + str(batch_size-valid_size) + " failed to finish"
         plt.title(param_string + "\n" + step_string + "\n" + batch_string)
         plt.savefig("histograms/" + str(time.perf_counter()) + "with" + str(batch_size) + "of" + str(trial_max_length) + '.png')
+        plt.show()
         plt.close()
+
 #-----------analysis-----------
 plt.close()
 final_label = "Switching times from methylated to unmethylated as birth rate changes \n Population = 100"

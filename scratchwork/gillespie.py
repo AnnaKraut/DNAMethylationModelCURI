@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 #import config file - we can use config functions as if they were defined here
 #the only difference is that we prefix them with c. (so "function(x) becomes c.function(x)")
-import config as c
+import switching_time_algorithm.config as c
 
 #TODO: convert to use numpy arrays (faster)
 #TODO: ask if its ok that arrays are fixed length - this makes optimizing them substantially easier

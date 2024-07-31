@@ -1,5 +1,5 @@
 import numpy as np
-import optimized_algorithm.jittedswitch as jittedswitch
+import optimized_switching_time_algorithm.jittedswitch as jittedswitch
 import matplotlib.pyplot as plt
 import scipy.stats as stats
 import numba
@@ -10,9 +10,9 @@ from numba import prange
 #-----------parameterization-----------
 #TODO: add easier ways for users to input data
 #user should enter begin, end, step for the parameter they want to change.
-param_begin_val = 0.5
-param_end_val = 0.5
-step_count = 1
+param_begin_val = 0
+param_end_val = 3
+step_count = 100
 # define a parameter to vary - must be in the parameters dictionary - this should probably be selectable on command line
 param_to_change = "birth_rate"
 #define batch size - how many different runs should we average for each step? 
@@ -24,7 +24,7 @@ totalpop = 100
 methylatedpop = 90
 unmethylatedpop = 10
 #SwitchDirection - a simulation terminates when it reaches this state
-SwitchDirection = -1 #1 -> mostly methylated, -1-> mostly unmethylated
+# SwitchDirection = 1 #1 -> mostly methylated, -1-> mostly unmethylated
 #-----------Rates Dictionary---------
 default_parameters = {"r_hm": 0.5,          #0
                       "r_hm_m": 20/totalpop, #1
@@ -73,7 +73,7 @@ step_size = round((param_end_val-param_begin_val)/step_count, 5)
 
 #-----------simulation-----------
 @numba.jit(nopython=True, parallel=True)
-def main(rngs):
+def main(rngs,SwitchDirection,methylatedpop, unmethylatedpop):
     output_array = np.zeros(shape=(step_count, batch_size))
     #this loop runs in parallel because it uses prange() instead of range() - keep this in mind when debugging it!
     for step in prange(step_count):
@@ -86,40 +86,17 @@ def main(rngs):
         for i in range(batch_size):
             output_array[step][i] = jittedswitch.GillespieSwitchFun(trial_max_length, temp_arr, totalpop, methylatedpop, unmethylatedpop, SwitchDirection,rngs[step])
     return output_array
-
-        # plt.close() #ensure the previous graph is done
-        # plt.hist(valid_array, bins=200)
-        # #generate strings, we will concatenate these into a single title string for the graphs
-        # param_string = "parameter: " + str(param_to_change) +  " = " + str(step_array[step]) + " -> Exponential Parameter = " + str(exponential_parameters[step])
-        # step_string = "Step " + str(step+1) + "/" + str(step_count)
-        # batch_string = "Batch of " + str(batch_size) + ", running for " + str(trial_max_length) + " steps each " + str(batch_size-valid_size) + " failed to finish"
-        # plt.title(param_string + "\n" + step_string + "\n" + batch_string)
-        # plt.savefig("histograms/" + str(time.perf_counter()) + "with" + str(batch_size) + "of" + str(trial_max_length) + '.png')
-        # plt.show()
-        # plt.close()
-    
-#-----------setup-----------
-
+#-----------setup - METHYLATED TO UNMETHYLATED-----------
+SwitchDirection = -1
 #generate the arrays for our output - None (or null value) is the default
-exponential_parameters = [None] * step_count
-exponential_KS = [None] * step_count
-
-gamma_shape = [None] * step_count
-gamma_location = [None] * step_count
-gamma_scale = [None] * step_count
-gamma_KS = [None] * step_count
-inverse_gamma_scale = [None] * step_count
-
-normal_KS = [None] * step_count
-normal_sd = [None] * step_count
-normal_mean = [None] * step_count
-
-timeouts = [0] * step_count
-empirical_mean = [None] * step_count
-
-line = [None] * step_count
-
-
+exponential_parameters_MtoU = [None] * step_count
+gamma_shape_MtoU = [None] * step_count
+gamma_location_MtoU = [None] * step_count
+gamma_scale_MtoU = [None] * step_count
+exponential_KS_MtoU = [None] * step_count
+gamma_KS_MtoU = [None] * step_count
+timeouts_MtoU = [0] * step_count
+empirical_mean_MtoU = [None] * step_count
 #list comprehension that creates an array of the values we tested for our chosen parameter
 step_array = [step_size * i for i in range(step_count)]
 
@@ -130,7 +107,9 @@ for i in range(step_count):
     generators[i] = np.random.default_rng()
 
 #-----------Call simulation-----------
-output = main(generators)
+methylatedpop = 90
+unmethylatedpop = 10
+output = main(generators,-1,methylatedpop, unmethylatedpop)
 
 #-----------postprocessing-----------
 
@@ -140,64 +119,88 @@ for step in range(step_count):
     valid_array = [output[step][index] for index in range(batch_size) if output[step][index] >= 0]
     #this list comprehension counts up all the negative (meaning timed out) values
     raw_timeouts = batch_size - len(valid_array)
-    timeouts[step] = 10*(raw_timeouts/batch_size) #scale the timeouts to fit with the other info on the graph
-
-    #create a line representing the parameter we are varying on the y axis
-    line[step] = step_array[step]
-
+    timeouts_MtoU[step] = 10*(raw_timeouts/batch_size) #scale the timeouts to fit with the other info on the graph
 
     #guess parameters only if less than half our simulations timed out
     if len(valid_array) > batch_size/2:
         #fit distributions to the data
-        exponential_parameters[step] = stats.expon.fit(valid_array,floc=0)[1]
-        print('exponential paramater = ' + str(exponential_parameters[step]))
+        exponential_parameters_MtoU[step] = stats.expon.fit(valid_array,floc=0)[1]
 
-        gamma_shape[step],gamma_location[step],gamma_scale[step]=stats.gamma.fit(valid_array,floc=0)
-        inverse_gamma_scale[step] = 1/gamma_scale[step]
-
-        normal_mean[step], normal_sd[step] =  stats.norm.fit(valid_array,)
-        print(f'Normal mean is {normal_mean[step]} and S.D. is {normal_sd[step]}')
-
-        empirical_mean[step] = statistics.fmean(valid_array)
+        empirical_mean_MtoU[step] = statistics.fmean(valid_array)
 
         #calculate error for parameters with Kolmogorov-Smirnov test
-        #note that we lock the first argument, location, to 0 for the exponential distribution
-        exponential_KS[step] = 10 * (stats.kstest(valid_array, 'expon', N=len(valid_array), args=(0,exponential_parameters[step])).statistic)
-        print(exponential_KS[step])
-        # normal_KS[step] = 10 * (stats.kstest(valid_array, 'norm', N=len(valid_array), args=(normal_mean[step], normal_sd[step])).statistic)
-        # print(normal_KS[step])
-        gamma_KS[step] = 10 * (stats.kstest(valid_array, stats.gamma.cdf, N=len(valid_array), args=(gamma_shape[step],0,gamma_scale[step])).statistic)
-        print(gamma_KS[step])
-
-    # print("predicted exponential parameter: ", exponential_parameters[step])
-    # print("predicted gamma shape parameter: ", gamma_shape[step])
+        #TODO: add args for expon
+        exponential_KS_MtoU[step] = 10 * (stats.kstest(valid_array, 'expon', args=(0,exponential_parameters_MtoU[step]), N=len(valid_array)).statistic)
+        print(exponential_KS_MtoU[step])
     print("timed-out simulations: " + str(raw_timeouts) + " out of " + str(batch_size))
+    print('exponential paramater MtoU = ' + str(exponential_parameters_MtoU[step]))
+
+
+#-----------setup - UNMETHYLATED TO METHYLATED-----------
+SwitchDirection = 1
+methylatedpop = 10
+unmethylatedpop = 90
+#generate the arrays for our output - None (or null value) is the default
+exponential_parameters_UtoM = [None] * step_count
+gamma_shape_UtoM = [None] * step_count
+gamma_location_UtoM = [None] * step_count
+gamma_scale_UtoM = [None] * step_count
+exponential_KS_UtoM = [None] * step_count
+gamma_KS_UtoM = [None] * step_count
+normal_KS_UtoM = [None] * step_count
+normal_sd_UtoM = [None] * step_count
+normal_mean_UtoM = [None] * step_count
+timeouts_UtoM = [0] * step_count
+empirical_mean_UtoM = [None] * step_count
+#list comprehension that creates an array of the values we tested for our chosen parameter
+#TODO: add offset of initial size
+step_array = [step_size * i for i in range(step_count)]
+
+output = main(generators,1,methylatedpop, unmethylatedpop)
+
+for step in range(step_count):
+    #this list comprehension makes an array of all the positive values in a given row of output_array
+    valid_array = [output[step][index] for index in range(batch_size) if output[step][index] >= 0]
+    #this list comprehension counts up all the negative (meaning timed out) values
+    raw_timeouts = batch_size - len(valid_array)
+    timeouts_UtoM[step] = 10*(raw_timeouts/batch_size) #scale the timeouts to fit with the other info on the graph
+
+    #guess parameters only if less than half our simulations timed out
+    if len(valid_array) > batch_size/2:
+        #fit distributions to the data
+        exponential_parameters_UtoM[step] = stats.expon.fit(valid_array,floc=0)[1]
+
+        empirical_mean_UtoM[step] = statistics.fmean(valid_array)
+
+        #calculate error for parameters with Kolmogorov-Smirnov test
+        #TODO: add args for expon
+        exponential_KS_UtoM[step] = 10 * (stats.kstest(valid_array, 'expon', N=len(valid_array), args=(0,exponential_parameters_UtoM[step])).statistic)
+        print(exponential_KS_MtoU[step])
+
+    print("timed-out simulations: " + str(raw_timeouts) + " out of " + str(batch_size))
+    print('exponential paramater UtoM= ' + str(exponential_parameters_UtoM[step]))
 
 #-----------graphing-----------
 
-
-#convert all these to f strings
 plt.close()
-final_label = "Switching times from unmethylated to methylated as birth rate changes \n Population = " + str(totalpop)
+final_label = "Two-way switching directions with Population = 100"
 run_stats = "Batches of " + str(batch_size) + ", running for maximum of " + str(trial_max_length) + " steps each"
-plt.plot(step_array, exponential_parameters,label="exponential parameters", linestyle='dashed')
-plt.plot(step_array,timeouts, label = "proportion timed out, scaled by 10x")
-plt.plot(step_array, exponential_KS, label="Exponential KS error, scaled by 10x")
 
-# plt.plot(step_array, gamma_shape,label="Gamma shape")
-# plt.plot(step_array, gamma_location,label="Gamma location")
-# plt.plot(step_array, gamma_scale,label="Gamma scale")
-# plt.plot(step_array, inverse_gamma_scale,label = "1/Gamma scale",linestyle='dashed')
-# plt.plot(step_array, gamma_KS, label="Gamma KS error, scaled by 10x")
-plt.plot(step_array, line, linestyle='dotted', label = 'Birth Rate')
+#MtoU
+plt.plot(step_array, exponential_parameters_MtoU,label="exponential parameters")
+plt.plot(step_array,timeouts_MtoU, label = "proportion timed out, scaled by 10x")
+plt.plot(step_array, exponential_KS_MtoU, label="Exponential KS error, scaled by 10x")
+# plt.plot(step_array, empirical_mean_MtoU, label='Empirical Mean',linestyle='none',marker='.')
 
-# plt.plot(step_array, normal_mean, label='Normal mean',marker='.',linestyle='')
-# plt.plot(step_array, normal_sd, label='Normal S.D.',marker='.',linestyle='')
-# plt.plot(step_array, normal_KS, label="Normal KS error, scaled by 10x",marker='.',linestyle='')
-# plt.plot(step_array, empirical_mean, label='Empirical Mean', linestyle='dashed')
+#UtoM
+plt.plot(step_array, exponential_parameters_UtoM,label="exponential parameters", linestyle='dashed')
+plt.plot(step_array,timeouts_UtoM, label = "proportion timed out, scaled by 10x", linestyle='dashed')
+plt.plot(step_array, exponential_KS_UtoM, label="Exponential KS error, scaled by 10x", linestyle='dashed')
+# plt.plot(step_array, empirical_mean_UtoM, label='Empirical Mean', linestyle='none',marker='.')
 
-plt.title(final_label + "\n" + run_stats)
+plt.title(final_label + "\n" + run_stats + "\n" + "Solid: Hyper-to-Hypomethylated, dashed: Hypo-to-Hypermethylated")
 plt.xlabel('Value of parameter '+ param_to_change)
 plt.ylabel('Exponential parameter of switching time distribution')
 plt.legend(loc='upper right')
 plt.show()
+

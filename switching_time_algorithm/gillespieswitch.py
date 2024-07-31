@@ -3,11 +3,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set_theme(style="darkgrid")
-from dataclasses import dataclass
 
 #import config file - we can use config functions as if they were defined here
 #the only difference is that we prefix them with c. (so "function(x) becomes c.function(x)")
-import config as c
+import switching_time_algorithm.config as c
 
 #TODO: convert to use numpy arrays (faster)
 #TODO: ask if its ok that arrays are fixed length - this makes optimizing them substantially easier
@@ -26,7 +25,7 @@ class GillespieModelSwitchTime:
         self.methylated[0] = pop_methyl
         self.unmethylated[0] = pop_unmethyl
         self.tarr = [0]*steps     #time array
-        self.rng = np.random.default_rng() 
+        self.rng = np.random.default_rng(42) 
         #create an rng object - think of it as buying the dice we'll roll later - 
         #we can seed the rng object if we want reproducible results
         #is this initialization unnesceary? can we just point back to the param dict?
