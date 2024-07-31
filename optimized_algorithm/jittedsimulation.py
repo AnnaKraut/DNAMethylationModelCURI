@@ -1,5 +1,5 @@
 import numpy as np
-import jittedswitch
+import optimized_algorithm.jittedswitch as jittedswitch
 import matplotlib.pyplot as plt
 import scipy.stats as stats
 import numba
@@ -10,9 +10,9 @@ from numba import prange
 #-----------parameterization-----------
 #TODO: add easier ways for users to input data
 #user should enter begin, end, step for the parameter they want to change.
-param_begin_val = 0
-param_end_val = 500
-step_count = 100
+param_begin_val = 0.5
+param_end_val = 0.5
+step_count = 1
 # define a parameter to vary - must be in the parameters dictionary - this should probably be selectable on command line
 param_to_change = "birth_rate"
 #define batch size - how many different runs should we average for each step? 
@@ -150,6 +150,7 @@ for step in range(step_count):
     if len(valid_array) > batch_size/2:
         #fit distributions to the data
         exponential_parameters[step] = stats.expon.fit(valid_array,floc=0)[1]
+        print('exponential paramater = ' + str(exponential_parameters[step]))
 
         gamma_shape[step],gamma_location[step],gamma_scale[step]=stats.gamma.fit(valid_array,floc=0)
         inverse_gamma_scale[step] = 1/gamma_scale[step]
@@ -183,11 +184,11 @@ plt.plot(step_array, exponential_parameters,label="exponential parameters", line
 plt.plot(step_array,timeouts, label = "proportion timed out, scaled by 10x")
 plt.plot(step_array, exponential_KS, label="Exponential KS error, scaled by 10x")
 
-plt.plot(step_array, gamma_shape,label="Gamma shape")
-plt.plot(step_array, gamma_location,label="Gamma location")
-plt.plot(step_array, gamma_scale,label="Gamma scale")
-plt.plot(step_array, inverse_gamma_scale,label = "1/Gamma scale",linestyle='dashed')
-plt.plot(step_array, gamma_KS, label="Gamma KS error, scaled by 10x")
+# plt.plot(step_array, gamma_shape,label="Gamma shape")
+# plt.plot(step_array, gamma_location,label="Gamma location")
+# plt.plot(step_array, gamma_scale,label="Gamma scale")
+# plt.plot(step_array, inverse_gamma_scale,label = "1/Gamma scale",linestyle='dashed')
+# plt.plot(step_array, gamma_KS, label="Gamma KS error, scaled by 10x")
 plt.plot(step_array, line, linestyle='dotted', label = 'Birth Rate')
 
 # plt.plot(step_array, normal_mean, label='Normal mean',marker='.',linestyle='')

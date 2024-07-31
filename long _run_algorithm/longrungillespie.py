@@ -9,7 +9,7 @@ This file represents a long-run version of the gillespie algorithm.
 Goal: Get the proportion of time spent in a variety of regions for a specific parameter set
 
 Input: steps, parameter list, target parameter, parameter start, parameter end, bin count
-Output: array that returns the proportion of time spent in each of the bin_count**2 bins.
+Output: wide variety of descriptive statisticsn
 
 """
 
@@ -81,22 +81,18 @@ def GillespieLongRunFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, rn
     time_arr = np.zeros(steps) 
     time_arr[0] = 0 #initialize first value to zero to stay in sync with (un)methylated_arr
     rates = np.zeros(5) #using numpy array may or may not be optimal here - possible refactor point
-    #define our four amounts of cumulative time spent in different areas. By the end thse will sum to time_arr[-1]
+    #define our four amounts of cumulative time spent in different areas. By the end these will sum to time_arr[-1]
     methyl_cumulative = 0
     unmethyl_cumulative = 0
     middle_cumulative = 0
     sortamethl_cumulative = 0
 
-    
+    #the ith entry in each of the arrays will represent what proportion of cumulative time, by the ith step, was spent in each state
     methyl_cumulative_prop = np.zeros(steps) 
     unmethyl_cumulative_prop = np.zeros(steps)
     sortamethyl_cumulative_prop = np.zeros(steps)
 
 
-    #TODO: rewrite this for loop?
-    #TODO: Consider inlining
-    #TODO: consider using numpy randomstate?
-    #Maybe don't use np.sum()????
     #main loop - each generation or step is one iteration of this loop
     for i in range(1, steps): #start at 1, since the first step is given by pop_methyl/pop_unmethyl
 
@@ -141,22 +137,7 @@ def GillespieLongRunFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, rn
             else:
                 sum_so_far += normalized_rates[event_number]
 
-        #TODO: clarify whether we measure tau, or the tau of the last step (introduce a temp variable if so)
-        #classify our state, and increment the related cumulative sum
 
+    #we should reach this return point on every run
+    return (methyl_cumulative, unmethyl_cumulative, middle_cumulative, time_arr, methyl_cumulative_prop, unmethyl_cumulative_prop, sortamethyl_cumulative_prop)
 
-        
-    #we timed out - return a negative value to indicate that this isn't a normal run.
-    return (methyl_cumulative, unmethyl_cumulative, middle_cumulative, methylated_arr, unmethylated_arr, time_arr, methyl_cumulative_prop, unmethyl_cumulative_prop, sortamethyl_cumulative_prop)
-
-
-
-
-# curr_state = find_state(methylated_arr[i], unmethylated_arr[i], totalpop)
-#         if curr_state == 0:
-#             continue
-#         elif curr_state == SwitchDirection:
-#             if start_state == 0:
-#                 start_state = curr_state
-#                 continue
-#             return time_arr[i]
