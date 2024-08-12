@@ -76,11 +76,13 @@ def events(methylated, unmethylated, totalpop, i_local, rng_local):
 def GillespieLongRunFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, rng):
     methylated_arr = np.zeros(steps)
     unmethylated_arr = np.zeros(steps)
+    time_arr = np.zeros(steps) 
+    #set the first elements of the methylated/unmethylated arrays to the starting values
     methylated_arr[0] = pop_methyl 
     unmethylated_arr[0] = pop_unmethyl
-    time_arr = np.zeros(steps) 
-    time_arr[0] = 0 #initialize first value to zero to stay in sync with (un)methylated_arr
-    rates = np.zeros(5) #using numpy array may or may not be optimal here - possible refactor point
+    #set the first element of the time array to zero, so that it stays synced up with the (un)methylated arrays
+    time_arr[0] = 0
+    rates = np.zeros(5)
     #define our four amounts of cumulative time spent in different areas. By the end these will sum to time_arr[-1]
     methyl_cumulative = 0
     unmethyl_cumulative = 0
