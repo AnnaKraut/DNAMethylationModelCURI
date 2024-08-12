@@ -8,23 +8,18 @@ from numba import prange
 
 
 #-----------parameterization-----------
-#TODO: add easier ways for users to input data
 #user should enter begin, end, step for the parameter they want to change.
-param_begin_val = 0
-param_end_val = 3
-step_count = 10
-# define a parameter to vary - must be in the parameters dictionary - this should probably be selectable on command line
+param_begin_val = 1.6
+param_end_val = 1.6
+step_count = 1
+# define a parameter to vary - must be in the parameters dictionary
 param_to_change = "birth_rate"
-#define batch size - how many different runs should we average for each step? 
-batch_size = 5000
+#define batch size - how many different runs we average for each step
+batch_size = 50000
 #define length of trials in steps (default 1000) - they will usually stop earlier, this is more for allocating space
 trial_max_length = 10000
-#define starting population
+#define starting population - the starting counts of methylated/unmethylated are further down in the file
 totalpop = 100
-methylatedpop = 90
-unmethylatedpop = 10
-#SwitchDirection - a simulation terminates when it reaches this state
-# SwitchDirection = 1 #1 -> mostly methylated, -1-> mostly unmethylated
 #-----------Rates Dictionary---------
 default_parameters = {"r_hm": 0.5,          #0
                       "r_hm_m": 20/totalpop, #1
@@ -107,8 +102,8 @@ for i in range(step_count):
     generators[i] = np.random.default_rng()
 
 #-----------Call simulation-----------
-methylatedpop = 90
-unmethylatedpop = 10
+methylatedpop = 71
+unmethylatedpop = 13
 output = main(generators,-1,methylatedpop, unmethylatedpop)
 
 #-----------postprocessing-----------
@@ -138,8 +133,8 @@ for step in range(step_count):
 
 #-----------setup - UNMETHYLATED TO METHYLATED-----------
 SwitchDirection = 1
-methylatedpop = 10
-unmethylatedpop = 90
+methylatedpop = 4
+unmethylatedpop = 72
 #generate the arrays for our output - None (or null value) is the default
 exponential_parameters_UtoM = [None] * step_count
 gamma_shape_UtoM = [None] * step_count
@@ -203,4 +198,3 @@ plt.xlabel('Value of parameter '+ param_to_change)
 plt.ylabel('Exponential parameter of switching time distribution')
 plt.legend(loc='upper right')
 plt.show()
-

@@ -79,11 +79,6 @@ def GillespieSwitchFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, Swi
     start_state = find_state(pop_methyl,pop_unmethyl, totalpop)
     rates = np.zeros(5) #using numpy array may or may not be optimal here - possible refactor point
 
-
-    #TODO: rewrite this for loop?
-    #TODO: Consider inlining
-    #TODO: consider using numpy randomstate?
-    #Maybe don't use np.sum()????
     #main loop - each generation or step is one iteration of this loop
     for i in range(1, steps): #start at 1, since the first step is given by pop_methyl/pop_unmethyl
 

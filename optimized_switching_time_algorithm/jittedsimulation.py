@@ -8,18 +8,17 @@ from numba import prange
 
 
 #-----------parameterization-----------
-#TODO: add easier ways for users to input data
-#user should enter begin, end, step for the parameter they want to change.
+#the simulation will generate a range of values of the target parameter between param_begin_val and param_end_val
 param_begin_val = 0.5
 param_end_val = 0.5
 step_count = 1
-# define a parameter to vary - must be in the parameters dictionary - this should probably be selectable on command line
+# define a parameter to vary - must be in the parameters dictionary
 param_to_change = "birth_rate"
-#define batch size - how many different runs should we average for each step? 
+#define batch size - this determines how many runs are averaged in each step 
 batch_size = 5000
 #define length of trials in steps (default 1000) - they will usually stop earlier, this is more for allocating space
 trial_max_length = 10000
-#define starting population
+#define starting population (number of sites)
 totalpop = 100
 methylatedpop = 90
 unmethylatedpop = 10
@@ -69,13 +68,12 @@ index_to_change = default_indices[param_to_change]
 
 #find the size of each step, rounded to 5 decimal places.
 step_size = round((param_end_val-param_begin_val)/step_count, 5)
-# step_array = step_count
 
 #-----------simulation-----------
 @numba.jit(nopython=True, parallel=True)
 def main(rngs):
     output_array = np.zeros(shape=(step_count, batch_size))
-    #this loop runs in parallel because it uses prange() instead of range() - keep this in mind when debugging it!
+    #this loop runs in parallel because it uses prange() instead of range() - keep this in mind if debugging it
     for step in prange(step_count):
         #make a copy of the default parameters, change the parameter we want to study
         temp_arr = default_arr.copy()
@@ -86,18 +84,6 @@ def main(rngs):
         for i in range(batch_size):
             output_array[step][i] = jittedswitch.GillespieSwitchFun(trial_max_length, temp_arr, totalpop, methylatedpop, unmethylatedpop, SwitchDirection,rngs[step])
     return output_array
-
-        # plt.close() #ensure the previous graph is done
-        # plt.hist(valid_array, bins=200)
-        # #generate strings, we will concatenate these into a single title string for the graphs
-        # param_string = "parameter: " + str(param_to_change) +  " = " + str(step_array[step]) + " -> Exponential Parameter = " + str(exponential_parameters[step])
-        # step_string = "Step " + str(step+1) + "/" + str(step_count)
-        # batch_string = "Batch of " + str(batch_size) + ", running for " + str(trial_max_length) + " steps each " + str(batch_size-valid_size) + " failed to finish"
-        # plt.title(param_string + "\n" + step_string + "\n" + batch_string)
-        # plt.savefig("histograms/" + str(time.perf_counter()) + "with" + str(batch_size) + "of" + str(trial_max_length) + '.png')
-        # plt.show()
-        # plt.close()
-    
 #-----------setup-----------
 
 #generate the arrays for our output - None (or null value) is the default
@@ -145,7 +131,6 @@ for step in range(step_count):
     #create a line representing the parameter we are varying on the y axis
     line[step] = step_array[step]
 
-
     #guess parameters only if less than half our simulations timed out
     if len(valid_array) > batch_size/2:
         #fit distributions to the data
@@ -175,7 +160,7 @@ for step in range(step_count):
 
 #-----------graphing-----------
 
-
+#plotting - much of this can be removed if desired
 #convert all these to f strings
 plt.close()
 final_label = "Switching times from unmethylated to methylated as birth rate changes \n Population = " + str(totalpop)
