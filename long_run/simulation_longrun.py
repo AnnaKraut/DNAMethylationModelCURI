@@ -1,5 +1,5 @@
 import numpy as np
-import longrungillespie
+import long_run.gillespie_longrun as gillespie_longrun
 import matplotlib.pyplot as plt
 import numba
 
@@ -27,7 +27,7 @@ default_parameters = {"r_hm": 0.5,          #0
                       "r_hu_h": 5/totalpop,   #11
                       
                       #adjust birth rate directly
-                      "birth_rate": 1.6       #12
+                      "birth_rate": 1      #12
 }
 
 #This dictionary just matches each parameter to its place in the list.
@@ -55,7 +55,7 @@ default_arr = np.array([default_parameters[key] for key in parameter_labels])
 #-----------simulation-----------
 @numba.jit()
 def main(rng):
-        methyl_time, unmethyl_time, middle_time, time_arr, methyl_cumulative_prop, unmethyl_cumulative_prop, sortamethyl_cumulative_prop = longrungillespie.GillespieLongRunFun(trial_max_length, default_arr, totalpop, methylatedpop, unmethylatedpop, rng)
+        methyl_time, unmethyl_time, middle_time, time_arr, methyl_cumulative_prop, unmethyl_cumulative_prop, sortamethyl_cumulative_prop = gillespie_longrun.GillespieLongRunFun(trial_max_length, default_arr, totalpop, methylatedpop, unmethylatedpop, rng)
         return methyl_time,unmethyl_time,middle_time, time_arr, methyl_cumulative_prop, unmethyl_cumulative_prop, sortamethyl_cumulative_prop
     
 #-----------setup-----------

@@ -1,5 +1,5 @@
 import numpy as np
-import coordinateswitch as jittedswitch
+import switching_coordinates.gillespie_coordinate as jittedswitch
 import matplotlib.pyplot as plt
 import scipy.stats as stats
 import numba
