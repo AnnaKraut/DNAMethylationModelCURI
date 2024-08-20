@@ -6,7 +6,7 @@ def death_event(self):
     print("ran deatj, updated self.n to", self.narr[self.currstep])
 
 base_rates = {"birth":0.1,
-                  "death":0.05
+                  "death":0.1
 }
     
 base_events = {"birth":birth_event,

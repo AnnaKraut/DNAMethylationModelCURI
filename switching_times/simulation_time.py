@@ -1,5 +1,5 @@
 import numpy as np
-import jittedswitch as jittedswitch
+import switching_times.gillespie_time as gillespie_time
 import matplotlib.pyplot as plt
 import scipy.stats as stats
 import numba
@@ -82,7 +82,7 @@ def main(rngs):
 
         #run a batch of identical gillespie algorithms, store the results in output_array[step]
         for i in range(batch_size):
-            output_array[step][i] = jittedswitch.GillespieSwitchFun(trial_max_length, temp_arr, totalpop, methylatedpop, unmethylatedpop, SwitchDirection,rngs[step])
+            output_array[step][i] = gillespie_time.GillespieSwitchFun(trial_max_length, temp_arr, totalpop, methylatedpop, unmethylatedpop, SwitchDirection,rngs[step])
     return output_array
 #-----------setup-----------
 

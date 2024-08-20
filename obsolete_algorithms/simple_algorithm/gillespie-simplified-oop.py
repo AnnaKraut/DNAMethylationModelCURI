@@ -1,9 +1,5 @@
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
-sns.set_theme(style="darkgrid")
-from dataclasses import dataclass
 
 #import config file - we can use config functions as if they were defined here
 #the only difference is that we prefix them with c. (so "function(x) becomes c.function(x)")

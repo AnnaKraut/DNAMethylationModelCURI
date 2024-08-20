@@ -1,5 +1,5 @@
 import numpy as np
-import jittedswitch as jittedswitch
+import switching_times.gillespie_time as gillespie_time
 import matplotlib.pyplot as plt
 import scipy.stats as stats
 import numba
@@ -9,15 +9,15 @@ from numba import prange
 
 #-----------parameterization-----------
 #user should enter begin, end, step for the parameter they want to change.
-param_begin_val = 1.6
+param_begin_val = 0.7
 param_end_val = 1.6
-step_count = 1
+step_count = 7
 # define a parameter to vary - must be in the parameters dictionary
 param_to_change = "birth_rate"
 #define batch size - how many different runs we average for each step
 batch_size = 50000
 #define length of trials in steps (default 1000) - they will usually stop earlier, this is more for allocating space
-trial_max_length = 10000
+trial_max_length = 100000
 #define starting population - the starting counts of methylated/unmethylated are further down in the file
 totalpop = 100
 #-----------Rates Dictionary---------
@@ -79,7 +79,7 @@ def main(rngs,SwitchDirection,methylatedpop, unmethylatedpop):
 
         #run a batch of identical gillespie algorithms, store the results in output_array[step]
         for i in range(batch_size):
-            output_array[step][i] = jittedswitch.GillespieSwitchFun(trial_max_length, temp_arr, totalpop, methylatedpop, unmethylatedpop, SwitchDirection,rngs[step])
+            output_array[step][i] = gillespie_time.GillespieSwitchFun(trial_max_length, temp_arr, totalpop, methylatedpop, unmethylatedpop, SwitchDirection,rngs[step])
     return output_array
 #-----------setup - METHYLATED TO UNMETHYLATED-----------
 SwitchDirection = -1
