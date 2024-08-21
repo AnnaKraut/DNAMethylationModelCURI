@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numba
 
 
-#-----------parameterization-----------
+#-----------parameters - edit here-----------
 #number of steps that the gillespie algorithm will take (large values can cause memory issues, starting around 1,000,000,000)
 trial_max_length = 100000000
 #define starting population
@@ -26,7 +26,7 @@ default_parameters = {"r_hm": 0.5,          #0
                       "r_hu_u": 10/totalpop, #10
                       "r_hu_h": 5/totalpop,   #11
                       
-                      #adjust birth rate directly
+                      #adjust birth rate directly - edit here
                       "birth_rate": 1      #12
 }
 

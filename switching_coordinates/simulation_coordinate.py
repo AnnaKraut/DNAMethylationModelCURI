@@ -7,7 +7,7 @@ import statistics
 from numba import prange
 
 
-#-----------parameterization-----------
+#-----------parameters-----------
 #edit desired parameters directly in the default dictionary
 #define batch size - how many different runs should we average for each step? 
 batch_size = 5000

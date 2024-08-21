@@ -1,5 +1,5 @@
 import numpy as np
-import switching_times.gillespie_time as gillespie_time
+import gillespie_time as gillespie_time
 import matplotlib.pyplot as plt
 import scipy.stats as stats
 import numba
@@ -7,17 +7,17 @@ import statistics
 from numba import prange
 
 
-#-----------parameterization-----------
+#-----------parameters-----------
 #user should enter begin, end, step for the parameter they want to change.
-param_begin_val = 0.7
-param_end_val = 1.6
-step_count = 7
+param_begin_val = 0.5
+param_end_val = 1.5
+step_count = 50
 # define a parameter to vary - must be in the parameters dictionary
 param_to_change = "birth_rate"
-#define batch size - how many different runs we average for each step
-batch_size = 50000
-#define length of trials in steps (default 1000) - they will usually stop earlier, this is more for allocating space
-trial_max_length = 100000
+#define batch size - how many different runs we average for each step - usually 5000 is fine
+batch_size = 5000
+#define length of trials in steps (default 10000) - they will usually stop earlier, this is more for allocating space
+trial_max_length = 10000
 #define starting population - the starting counts of methylated/unmethylated are further down in the file
 totalpop = 100
 #-----------Rates Dictionary---------
@@ -63,7 +63,7 @@ default_arr = np.array([default_parameters[key] for key in parameter_labels])
 index_to_change = default_indices[param_to_change]
 
 #find the size of each step, rounded to 5 decimal places.
-step_size = round((param_end_val-param_begin_val)/step_count, 5)
+step_size = round((param_end_val-param_begin_val)/(step_count-1), 5)
 # step_array = step_count
 
 #-----------simulation-----------
@@ -81,8 +81,8 @@ def main(rngs,SwitchDirection,methylatedpop, unmethylatedpop):
         for i in range(batch_size):
             output_array[step][i] = gillespie_time.GillespieSwitchFun(trial_max_length, temp_arr, totalpop, methylatedpop, unmethylatedpop, SwitchDirection,rngs[step])
     return output_array
+
 #-----------setup - METHYLATED TO UNMETHYLATED-----------
-SwitchDirection = -1
 #generate the arrays for our output - None (or null value) is the default
 exponential_parameters_MtoU = [None] * step_count
 gamma_shape_MtoU = [None] * step_count
@@ -101,9 +101,12 @@ generators = [None]*step_count
 for i in range(step_count):
     generators[i] = np.random.default_rng()
 
-#-----------Call simulation-----------
+#-----------parameters - edit here - METHYLATED TO UNMETHYLATED-----------
 methylatedpop = 71
 unmethylatedpop = 13
+
+#-----------Call simulation-----------
+SwitchDirection = -1
 output = main(generators,-1,methylatedpop, unmethylatedpop)
 
 #-----------postprocessing-----------
@@ -131,10 +134,15 @@ for step in range(step_count):
     print('exponential paramater MtoU = ' + str(exponential_parameters_MtoU[step]))
 
 
-#-----------setup - UNMETHYLATED TO METHYLATED-----------
-SwitchDirection = 1
+#-----------parameters - edit here - UNMETHYLATED TO METHYLATED-----------
+
 methylatedpop = 4
 unmethylatedpop = 72
+
+#-----------call simulation-----------
+SwitchDirection = 1
+output = main(generators,1,methylatedpop, unmethylatedpop)
+
 #generate the arrays for our output - None (or null value) is the default
 exponential_parameters_UtoM = [None] * step_count
 gamma_shape_UtoM = [None] * step_count
@@ -151,7 +159,6 @@ empirical_mean_UtoM = [None] * step_count
 #TODO: add offset of initial size
 step_array = [step_size * i for i in range(step_count)]
 
-output = main(generators,1,methylatedpop, unmethylatedpop)
 
 for step in range(step_count):
     #this list comprehension makes an array of all the positive values in a given row of output_array

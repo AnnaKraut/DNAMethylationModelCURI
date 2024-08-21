@@ -1,5 +1,5 @@
 import numpy as np
-import switching_times.gillespie_time as gillespie_time
+import gillespie_time
 import matplotlib.pyplot as plt
 import scipy.stats as stats
 import numba
@@ -7,11 +7,11 @@ import statistics
 from numba import prange
 
 
-#-----------parameterization-----------
+#-----------parameters-----------
 #the simulation will generate a range of values of the target parameter between param_begin_val and param_end_val
 param_begin_val = 0.5
-param_end_val = 0.5
-step_count = 1
+param_end_val = 1.5
+step_count = 10
 # define a parameter to vary - must be in the parameters dictionary
 param_to_change = "birth_rate"
 #define batch size - this determines how many runs are averaged in each step 
@@ -67,7 +67,7 @@ default_arr = np.array([default_parameters[key] for key in parameter_labels])
 index_to_change = default_indices[param_to_change]
 
 #find the size of each step, rounded to 5 decimal places.
-step_size = round((param_end_val-param_begin_val)/step_count, 5)
+step_size = round((param_end_val-param_begin_val)/(step_count-1), 5)
 
 #-----------simulation-----------
 @numba.jit(nopython=True, parallel=True)
