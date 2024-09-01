@@ -142,7 +142,6 @@ for step in range(step_count):
         empirical_mean_MtoU[step] = statistics.fmean(valid_array)
 
         #calculate error for parameters with Kolmogorov-Smirnov test
-        #TODO: add args for expon
         exponential_KS_MtoU[step] = 10 * (stats.kstest(valid_array, 'expon', args=(0,exponential_parameters_MtoU[step]), N=len(valid_array)).statistic)
         print(exponential_KS_MtoU[step])
     print("timed-out simulations: " + str(raw_timeouts) + " out of " + str(batch_size))
