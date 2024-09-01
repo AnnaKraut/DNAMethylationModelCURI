@@ -5,22 +5,28 @@ This repository allows you to generate and analyze large batches of stochastic s
 ## Assumptions and Terminology
 - All of these simulations use 100 sites (sometimes referred to as a "population" of 100). This count of sites does not change. Each of these sites is either Methylated, Hemimethylated, or Unmethylated. To simplify calculations, only Methylated and Unmethylated cell counts are tracked. Hemimethylated counts can be calculated as follows: 100 - (# of methylated cells + # of unmethylated cells).
 - Familiarity with the Gillespie Algorithm is essential for using this package. This is why I've left the obsolete_algorithm folder - it contains the simple_algorithm folder, which is a very simple, generic version of the Gillespie algorithm that incorporates only births and deaths. Playing around with this simple program was how I familiarized myself with the Gillespie algorithm, and it might be a good start if the python implementation of the algorithm is confusing to you.
+- The x-axis of the generated graphs will always start from 0. So if you try to graph a parameter between 0.5 and 1.5, you will get a graph that goes from 0-1 on the x-axis. Keep this in mind when interpreting the graphs.
 - 
 
 ## Components
 Each folder is independant (doesn't use code from other folders) and does different things. Each of them uses an implementation of the Gillespie algorithm with the same **core logic**, but different **output methods**. 
 - switching_times: performs many gillespie runs at once to get information about the time that it takes to switch from methylated to unmethylated and vice versa
     - Parameters
-    - Output
     - Details: 
+    - Output (twoway-simulation.py):  
+    <img src="images\2-way-switching-from-0-to-3-birth-rate-90-10-ratio.png" width="400" height="300">
+    - Output (simulation-time.py)  
+    <img src="images\1-way-switching-from-0-to-3-example.png" width="400" height="300">
 - switching_coordinates: performs many gillespie runs at once to find the average amount of methylation and unmethylation where switches happen. 
     - Parameters
-    - Output
     - Details: Since a "switch" is recorded whenever 70% or more of the sites are either methylated or unmethylated, in practice this algorithm is measuring whichever category is not at 70%. For example, for a switch from hypo-to-hyper-methylated to actually count as a switch, there will always be 71 hyper-methylated sites; the number of **un**methylated sites will change, however, and the program measures this. The nature of cellular division causing large jumps in unmethylated sites will also be captured by this program.
+    - Output  
+    <img src="images\coordinates-BR-1-75-15.png" width="400" height="300">
 - long_run: performs a single, very long, gillespie run to see what proportion of time is spent in each state (methylated, unmethylated, neither, or sort-of methylated*)
     - Parameters
-    - Output
     - Details: *sort-of methylated refers to the condition of being less than 30% unmethylated, and less than 70% methylated. This condition represents the situation after cell division leaves a previously methylated cell with lots of hemimethylation but no fully methylated sites. Cells in this condition often quickly become methylated again, and thus a specific descriptor for them was desirable.
+    - Output  
+    <img src="images\longtermgraph.png" width="400" height="300">
 
 ## Getting Started
 - Make sure you have an IDE or code environment that can run the proper version of python, and have installed all needed packages (they are listed at the top of each file)
