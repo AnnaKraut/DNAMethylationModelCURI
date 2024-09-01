@@ -1,13 +1,20 @@
 import numpy as np
-import switching_coordinates.gillespie_coordinate as jittedswitch
+import gillespie_coordinate
 import matplotlib.pyplot as plt
-import scipy.stats as stats
 import numba
 import statistics
 from numba import prange
 
+"""
+switching_coordinates: performs many gillespie runs at once to find the average amount of methylation and unmethylation when switches happen. 
 
-#-----------parameters-----------
+Edit the birth rate directly in the dictionary (on line 47) in this file.
+
+If you want histograms showing more detailed distributions, find the code blocks that say `edit here` and uncomment the graphing code.
+This will make a histogram for each switching direction in addition to the single, default graph.
+"""
+
+#-----------parameters - edit here-------------
 #edit desired parameters directly in the default dictionary
 #define batch size - how many different runs should we average for each step? 
 batch_size = 5000
@@ -66,8 +73,8 @@ def main(rng):
     crossing_coordinates = [(-1,-1)] * batch_size
 
     #run a batch of identical gillespie algorithms, store the results in output_array[step]
-    for i in range(batch_size):
-        output_array[i],crossing_coordinates[i]  = jittedswitch.GillespieSwitchFun(trial_max_length, default_arr, totalpop, methylatedpop, unmethylatedpop, SwitchDirection,rng)
+    for i in prange(batch_size):
+        output_array[i],crossing_coordinates[i]  = gillespie_coordinate.GillespieSwitchFun(trial_max_length, default_arr, totalpop, methylatedpop, unmethylatedpop, SwitchDirection,rng)
     return output_array,crossing_coordinates
 
 generator = np.random.default_rng()
@@ -84,6 +91,7 @@ methyl_valid_times, methyl_valid_coordinates = zip(*methyl_tuple_output)
 methyl_xcoords, methyl_ycoords = zip(*methyl_valid_coordinates)
 
 #if histograms are desired, uncomment the following code
+#-------edit here-------
 # plt.close()
 # plt.title("U->M histogram")
 # plt.hist(methyl_ycoords)
@@ -103,7 +111,7 @@ def main(rng):
 
     #run a batch of identical gillespie algorithms, store the results in output_array[step]
     for i in range(batch_size):
-        output_array[i],crossing_coordinates[i]  = jittedswitch.GillespieSwitchFun(trial_max_length, default_arr, totalpop, methylatedpop, unmethylatedpop, SwitchDirection,rng)
+        output_array[i],crossing_coordinates[i]  = gillespie_coordinate.GillespieSwitchFun(trial_max_length, default_arr, totalpop, methylatedpop, unmethylatedpop, SwitchDirection,rng)
     return output_array,crossing_coordinates
 
 generator = np.random.default_rng()
@@ -120,6 +128,7 @@ unmethyl_valid_times, unmethyl_valid_coordinates = zip(*unmethyl_tuple_output)
 unmethyl_xcoords, unmethyl_ycoords = zip(*unmethyl_valid_coordinates)
 
 #if histograms are desired, uncomment the following code
+#-------edit here-------
 # plt.close()
 # plt.title("M->U histogram")
 # plt.hist(unmethyl_xcoords)

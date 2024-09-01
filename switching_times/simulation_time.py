@@ -6,12 +6,23 @@ import numba
 import statistics
 from numba import prange
 
+"""
+Performs many gillespie runs at once to get information about the time 
+that it takes to switch from methylated to unmethylated and vice versa.
 
-#-----------parameters-----------
+Edit the parameters in the `parameters` block.
+
+There are many different graphing options for this simulation! 
+You can graph various parameters and goodness-of-fit measures for exponential, normal, and gamma fits,
+as well as the empirical mean of the measurements. To enable these graphs, simply uncomment them at the bottom of the file.
+"""
+
+
+#-----------parameters - edit here-----------
 #the simulation will generate a range of values of the target parameter between param_begin_val and param_end_val
-param_begin_val = 0.5
-param_end_val = 1.5
-step_count = 10
+param_begin_val = 0
+param_end_val = 3
+step_count = 100
 # define a parameter to vary - must be in the parameters dictionary
 param_to_change = "birth_rate"
 #define batch size - this determines how many runs are averaged in each step 
@@ -20,10 +31,10 @@ batch_size = 5000
 trial_max_length = 10000
 #define starting population (number of sites)
 totalpop = 100
-methylatedpop = 90
-unmethylatedpop = 10
+methylatedpop = 10
+unmethylatedpop = 90
 #SwitchDirection - a simulation terminates when it reaches this state
-SwitchDirection = -1 #1 -> mostly methylated, -1-> mostly unmethylated
+SwitchDirection = 1 #1 -> mostly methylated, -1-> mostly unmethylated
 #-----------Rates Dictionary---------
 default_parameters = {"r_hm": 0.5,          #0
                       "r_hm_m": 20/totalpop, #1
@@ -149,7 +160,7 @@ for step in range(step_count):
         #note that we lock the first argument, location, to 0 for the exponential distribution
         exponential_KS[step] = 10 * (stats.kstest(valid_array, 'expon', N=len(valid_array), args=(0,exponential_parameters[step])).statistic)
         print(exponential_KS[step])
-        # normal_KS[step] = 10 * (stats.kstest(valid_array, 'norm', N=len(valid_array), args=(normal_mean[step], normal_sd[step])).statistic)
+        normal_KS[step] = 10 * (stats.kstest(valid_array, 'norm', N=len(valid_array), args=(normal_mean[step], normal_sd[step])).statistic)
         # print(normal_KS[step])
         gamma_KS[step] = 10 * (stats.kstest(valid_array, stats.gamma.cdf, N=len(valid_array), args=(gamma_shape[step],0,gamma_scale[step])).statistic)
         print(gamma_KS[step])
@@ -158,10 +169,9 @@ for step in range(step_count):
     # print("predicted gamma shape parameter: ", gamma_shape[step])
     print("timed-out simulations: " + str(raw_timeouts) + " out of " + str(batch_size))
 
-#-----------graphing-----------
+#-----------graphing - edit here -----------
 
 #plotting - much of this can be removed if desired
-#convert all these to f strings
 plt.close()
 final_label = "Switching times from unmethylated to methylated as birth rate changes \n Population = " + str(totalpop)
 run_stats = "Batches of " + str(batch_size) + ", running for maximum of " + str(trial_max_length) + " steps each"
@@ -174,11 +184,11 @@ plt.plot(step_array, exponential_KS, label="Exponential KS error, scaled by 10x"
 # plt.plot(step_array, gamma_scale,label="Gamma scale")
 # plt.plot(step_array, inverse_gamma_scale,label = "1/Gamma scale",linestyle='dashed')
 # plt.plot(step_array, gamma_KS, label="Gamma KS error, scaled by 10x")
-plt.plot(step_array, line, linestyle='dotted', label = 'Birth Rate')
+# plt.plot(step_array, line, linestyle='dotted', label = 'Birth Rate')
 
-# plt.plot(step_array, normal_mean, label='Normal mean',marker='.',linestyle='')
-# plt.plot(step_array, normal_sd, label='Normal S.D.',marker='.',linestyle='')
-# plt.plot(step_array, normal_KS, label="Normal KS error, scaled by 10x",marker='.',linestyle='')
+plt.plot(step_array, normal_mean, label='Normal mean',marker='.',linestyle='')
+plt.plot(step_array, normal_sd, label='Normal S.D.',marker='.',linestyle='')
+plt.plot(step_array, normal_KS, label="Normal KS error, scaled by 10x",marker='.',linestyle='')
 # plt.plot(step_array, empirical_mean, label='Empirical Mean', linestyle='dashed')
 
 plt.title(final_label + "\n" + run_stats)

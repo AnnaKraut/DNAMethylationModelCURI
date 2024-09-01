@@ -9,7 +9,7 @@ This file represents a long-run version of the gillespie algorithm.
 Goal: Get the proportion of time spent in a variety of regions for a specific parameter set
 
 Input: steps, parameter list, target parameter, parameter start, parameter end, bin count
-Output: wide variety of descriptive statisticsn
+Output: wide variety of descriptive statistics
 
 """
 

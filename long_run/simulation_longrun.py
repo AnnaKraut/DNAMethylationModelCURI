@@ -1,7 +1,16 @@
 import numpy as np
-import long_run.gillespie_longrun as gillespie_longrun
+import gillespie_longrun as gillespie_longrun
 import matplotlib.pyplot as plt
 import numba
+
+"""
+Performs a single, very long, gillespie run to see what proportion of time is spent in each state - 
+(methylated, unmethylated, neither, or sort-of methylated).
+"sort-of methylated" refers to a state that is less than 30% unmethylated - in other words,
+it is a state where 70% of the sites are either methylated or hemimethylated.
+
+There are no alternate output options for this program - just edit the parameters and run it to get a graph.
+"""
 
 
 #-----------parameters - edit here-----------
@@ -27,7 +36,7 @@ default_parameters = {"r_hm": 0.5,          #0
                       "r_hu_h": 5/totalpop,   #11
                       
                       #adjust birth rate directly - edit here
-                      "birth_rate": 1      #12
+                      "birth_rate": 1     #12
 }
 
 #This dictionary just matches each parameter to its place in the list.

@@ -1,16 +1,18 @@
 import numpy as np
-from numba import jit
 from numba import njit
 import matplotlib.pyplot as plt
 
-# Jitted Switch
-# This file is a refactoring of the gillespie simulation that's designed to allow it to run better with jit compiling.
-# to do this, we need to convert the python objects into simpler objects (ideally numpy arrays) that play better with jit/numba.
-# Specifically, config files might need to be defined in the file instead of imported, and dictionaries will be converted into lists
-# also, there will be much less room for object-oriented code :(
-# We will use prange across different simulations (since each simulation is seperate, can be executed in parallel)
-# This code does not support debugging toggles, and doesn't print output at the simulation level.
-# Might be some weirdness with rng, see here: https://numba.readthedocs.io/en/stable/reference/pysupported.html
+"""
+This variant of the optimized gillespie simulation returns a tuple object containing the time at which the switch occured,
+and another tuple containing the number of sites that were methylated and unmethylated at this time. 
+
+This file is a refactoring of the gillespie simulation that's designed to allow it to run better with jit compiling.
+To do this, we need to convert the python objects into simpler objects (ideally numpy arrays) that play better with jit/numba.
+Specifically, config files might need to be defined in the file instead of imported, and dictionaries will be converted into lists
+We will use prange across different simulations (since each simulation is seperate, can be executed in parallel)
+This code does not support debugging toggles, and doesn't print output at the simulation level.
+There might be some weirdness with rng, see here: https://numba.readthedocs.io/en/stable/reference/pysupported.html
+"""
 
 @njit
 def maintenance_rate_collaborative(methylated, unmethylated, site_count, param_local):
@@ -112,9 +114,7 @@ def GillespieSwitchFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, Swi
         if curr_state == SwitchDirection:
             #select final coordinates and return them
             final_coords = (methylated_arr[i],unmethylated_arr[i])
-            print(final_coords)
             return time_arr[i], final_coords
         
     #we timed out - return a negative value to indicate that this isn't a normal run.
-    print(final_coords)
     return (-1 * time_arr[i]), (-1,-1)

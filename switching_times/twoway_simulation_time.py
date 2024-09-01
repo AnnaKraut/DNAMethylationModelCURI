@@ -6,11 +6,26 @@ import numba
 import statistics
 from numba import prange
 
+"""
+Performs many gillespie runs at once, in both directions, to get information about the time 
+that it takes to switch from methylated to unmethylated and vice versa.
+
+Edit the parameters in the `parameters` block.
+
+Important! Since this program simulates methylated->unmethylated and unmethylated->methylated transitions, 
+you must edit the starting populations for BOTH transitions, and these populations are NOT in the parameters block. 
+You can find these starting populations by searching for `edit here` in the file.
+
+There are many different graphing options for this simulation! 
+You can graph various parameters and goodness-of-fit measures for exponential, normal, and gamma fits,
+as well as the empirical mean of the measurements. To enable these graphs, simply uncomment them at the bottom of the file.
+"""
+
 
 #-----------parameters-----------
 #user should enter begin, end, step for the parameter they want to change.
-param_begin_val = 0.5
-param_end_val = 1.5
+param_begin_val = 0
+param_end_val = 3
 step_count = 50
 # define a parameter to vary - must be in the parameters dictionary
 param_to_change = "birth_rate"
