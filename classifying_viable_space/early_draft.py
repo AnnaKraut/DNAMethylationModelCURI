@@ -1,7 +1,11 @@
 # number of iterations before check:
 import math
-from sklearn import KMeans
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+
 import numpy as np
+from numpy import linalg
+
 
 # number of steps before reevaluating covariance and temperature
 N = 1000
@@ -73,11 +77,100 @@ def update_covar(covariance, f_a):
     else:
         return [[x / s for x in row] for row in covariance]
 
+# taken from https://github.com/minillinim/ellipsoid/tree/master
+# TODO: modify to keep only essential bits (we only need volume?) and possibly add improvements from paper (bootstrap points?)
+def fit_mvee(P=None, tolerance=0.01):
+    """ Find the minimum volume ellipsoid which holds all the points
+    
+    Based on work by Nima Moshtagh
+    http://www.mathworks.com/matlabcentral/fileexchange/9542
+    and also by looking at:
+    http://cctbx.sourceforge.net/current/python/scitbx.math.minimum_covering_ellipsoid.html
+    Which is based on the first reference anyway!
+    
+    Here, P is a numpy array of N dimensional points like this:
+    P = [[x,y,z,...], <-- one point per line
+            [x,y,z,...],
+            [x,y,z,...]]
+    
+    Returns:
+    (center, radii, rotation)
+    
+    """
+    (N, d) = np.shape(P)
+    d = float(d)
 
+    # Q will be our working array
+    Q = np.vstack([np.copy(P.T), np.ones(N)]) 
+    QT = Q.T
+    
+    # initializations
+    err = 1.0 + tolerance
+    u = (1.0 / N) * np.ones(N)
+    
+    # Khachiyan Algorithm
+    while err > tolerance:
+        V = np.dot(Q, np.dot(np.diag(u), QT))
+        M = np.diag(np.dot(QT , np.dot(linalg.inv(V), Q)))    # M the diagonal vector of an NxN matrix
+        j = np.argmax(M)
+        maximum = M[j]
+        step_size = (maximum - d - 1.0) / ((d + 1.0) * (maximum - 1.0))
+        new_u = (1.0 - step_size) * u
+        new_u[j] += step_size
+        err = np.linalg.norm(new_u - u)
+        u = new_u
+
+    # center of the ellipse 
+    center = np.dot(P.T, u)
+
+    # the A matrix for the ellipse
+    A = linalg.inv(
+                    np.dot(P.T, np.dot(np.diag(u), P)) - 
+                    np.array([[a * b for b in center] for a in center])
+                    ) / d
+                    
+    # Get the values we'd like to return
+    U, s, rotation = linalg.svd(A)
+    radii = 1.0/np.sqrt(s)
+    
+    return (center, radii, rotation)
+
+# TODO: possibly implement my own kmeans clustering to speed things up and avoid bloat
 def fit_ellipsoids(viable_points):
-    pass
+    scaler = StandardScaler()
+    scaled_data = scaler.fit_transform(viable_points)
 
+    dim = len(viable_points[0])
 
+    kmeans = KMeans(
+        init="random",
+        n_clusters=dim,
+        n_init=10,
+        max_iter=300,
+    )
+    kmeans.fit(scaled_data)
+    
+    partitions = np.array([[] for i in range(dim)])
+    # loop over each cluster and fit an ellipsoid
+    for i in reversed(kmeans.labels_):
+        partitions[i].append(viable_points.pop())
+    
+    total_volume = 0
+    for i in range(dim):
+        # fits an ellipsoid to the partition
+        fit = fit_mvee(partitions[i])
+        
+        # calculates the volume of the ellipsoid
+        vol = math.pi ** (dim/2) / math.gamma(dim/2 + 1)
+        for radius in fit[1]:
+            vol *= radius
+        
+        # adds the volume to the total
+        total_volume += vol
+    
+    return total_volume
+
+# TODO: figure out what it means for the volumes to converge
 def test_convergence(volumes):
     # if we haven't done enough loops yet
     loop_count = len(volumes)
