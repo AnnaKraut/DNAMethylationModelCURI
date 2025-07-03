@@ -1,0 +1,10 @@
+# ignore Unix-style hidden files
+.*
+# ignore temp files (with `temp` prefix)
+temp*
+# ignore MATLAB mex files, temporary source files and binary mat files
+*.mex*
+*.m~
+*.mat
+# but don't ignore .gitignore
+!.gitignore
