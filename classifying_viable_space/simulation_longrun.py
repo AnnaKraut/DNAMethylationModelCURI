@@ -3,6 +3,8 @@ import gillespie_longrun
 import matplotlib.pyplot as plt
 import numba
 
+# This is the file I am currently using to run tests with converging by RMSD (Root Mean Squared Deviance)
+
 """
 Performs a single, very long, gillespie run to see what proportion of time is spent in each state - 
 (methylated, unmethylated, neither, or sort-of methylated).
@@ -64,8 +66,8 @@ default_arr = np.array([default_parameters[key] for key in parameter_labels])
 #-----------simulation-----------
 @numba.jit()
 def main(rng):
-        methyl_time, unmethyl_time, middle_time, time_arr, methyl_cumulative_prop, unmethyl_cumulative_prop, sortamethyl_cumulative_prop, rmse_arr = gillespie_longrun.GillespieLongRunFun(trial_max_length, default_arr, totalpop, methylatedpop, unmethylatedpop, rng)
-        return methyl_time,unmethyl_time,middle_time, time_arr, methyl_cumulative_prop, unmethyl_cumulative_prop, sortamethyl_cumulative_prop, rmse_arr
+        methyl_time, unmethyl_time, middle_time, time_arr, methyl_cumulative_prop, unmethyl_cumulative_prop, sortamethyl_cumulative_prop, rmsd_arr = gillespie_longrun.GillespieLongRunFun(trial_max_length, default_arr, totalpop, methylatedpop, unmethylatedpop, rng)
+        return methyl_time,unmethyl_time,middle_time, time_arr, methyl_cumulative_prop, unmethyl_cumulative_prop, sortamethyl_cumulative_prop, rmsd_arr
     
 #-----------setup-----------
 
@@ -74,7 +76,7 @@ generator = np.random.default_rng()
 
 #-----------Call simulation-----------
 #call our gillespie algorithm and save the raw data
-methylated_time, unmethylated_time, time_in_middle, time_arr, methyl_cumulative_prop, unmethyl_cumulative_prop, sortamethyl_cumulative_prop, rmse_arr = main(generator)
+methylated_time, unmethylated_time, time_in_middle, time_arr, methyl_cumulative_prop, unmethyl_cumulative_prop, sortamethyl_cumulative_prop, rmsd_arr = main(generator)
 total_steps = len(time_arr)
 
 #print the amount of time that our simulation lasted
@@ -90,6 +92,7 @@ labels = ['methylated_prop','unmethylated_prop','time_in_middle_prop']
 
 #thin out our data by saving only every 100th observation - this makes it easier to graph
 xes = list(range(total_steps//100)) 
+
 #create the arrays that we will use
 methyl_cumulative_prop_thinned = np.zeros(total_steps//100)
 unmethyl_cumulative_prop_thinned = np.zeros(total_steps//100)
@@ -114,7 +117,7 @@ plt.plot(xes, middle_cumulative_prop_thinned,label="Transitionary")
 plt.legend(loc='upper right')
 
 plt.subplot(2,1,2)
-plt.plot(rmse_arr)
+plt.plot(rmsd_arr)
 
 plt.show()
       

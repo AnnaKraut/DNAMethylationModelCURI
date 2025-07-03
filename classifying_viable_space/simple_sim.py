@@ -4,6 +4,9 @@ from numba import njit
 import matplotlib.pyplot as plt
 import sys
 
+# This is the "simple" simulation w/o early termination
+# Currently MatLab is using this
+
 """
 This file represents a long-run version of the gillespie algorithm. 
 

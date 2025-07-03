@@ -111,14 +111,14 @@ def converges(data, threshold):
     
     output:
         a boolean:
-            True if the sum of all M series' root mean square errors is below the threshold
+            True if the sum of all M series' root mean square deviances is below the threshold
             False otherwise
         a float:
-            the total RMSE
+            the total RMSD
     """
     M, N = data.shape
     
-    total_rmse = 0.0
+    total_rmsd = 0.0
     for i in range(M):
         series = data[i]
         mean = np.mean(series)
@@ -127,9 +127,9 @@ def converges(data, threshold):
         for j in range(N):
             sse += (series[j] - mean) ** 2
         
-        total_rmse += np.sqrt(sse / N)
+        total_rmsd += np.sqrt(sse / N)
 
-    return (np.bool(total_rmse < threshold), total_rmse)
+    return (np.bool(total_rmsd < threshold), total_rmsd)
 
 
 @njit
@@ -137,7 +137,7 @@ def GillespieLongRunFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, rn
     methylated_arr = np.zeros(steps)
     unmethylated_arr = np.zeros(steps)
     time_arr = np.zeros(steps)
-    rmse_arr = np.zeros(steps//SAMPLE_N_STEPS)
+    rmsd_arr = np.zeros(steps//SAMPLE_N_STEPS)
     # set the first elements of the methylated/unmethylated arrays to the starting values
     methylated_arr[0] = pop_methyl
     unmethylated_arr[0] = pop_unmethyl
@@ -228,8 +228,8 @@ def GillespieLongRunFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, rn
             buffer[1, index] = unmethyl_cumulative_prop[i]
             buffer[2, index] = sortamethyl_cumulative_prop[i]
             buffer[3, index] = 1 - methyl_cumulative_prop[i] - unmethyl_cumulative_prop[i] - sortamethyl_cumulative_prop[i]
-            check, rmse = converges(buffer,THRESHOLD)
-            rmse_arr[i // SAMPLE_N_STEPS] = rmse
+            check, rmsd = converges(buffer,THRESHOLD)
+            rmsd_arr[i // SAMPLE_N_STEPS] = rmsd
             if check and (i > SAMPLE_N_STEPS * B_SIZE):
                 total_steps = i
                 break
@@ -243,5 +243,5 @@ def GillespieLongRunFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, rn
         methyl_cumulative_prop[: total_steps + 1],
         unmethyl_cumulative_prop[: total_steps + 1],
         sortamethyl_cumulative_prop[: total_steps + 1],
-        rmse_arr[: (total_steps // SAMPLE_N_STEPS) + 1]
+        rmsd_arr[: (total_steps // SAMPLE_N_STEPS) + 1]
     )
