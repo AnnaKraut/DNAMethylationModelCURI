@@ -11,11 +11,11 @@ POP_M = 50
 POP_H = 50
 
 # these are intentionally not defined because of how MatLab interfaces with this script
-params = np.array([r_hm, 2*r_hm_h, r_hm_h,
-          r_uh, 2*r_uh_h, r_uh_h,
-          r_mh, 2*r_mh_h, r_mh_h,
-          r_hu, 2*r_hu_h, r_hu_h,
-          r_cell_div])
+params = np.array([r_hm, 2*r_hm_h, r_hm_h, # type: ignore
+          r_uh, 2*r_uh_h, r_uh_h, # type: ignore
+          r_mh, 2*r_mh_h, r_mh_h, # type: ignore
+          r_hu, 2*r_hu_h, r_hu_h, # type: ignore
+          r_cell_div]) # type: ignore
 
 generator = np.random.default_rng()
 
