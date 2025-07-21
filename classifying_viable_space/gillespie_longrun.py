@@ -156,7 +156,7 @@ def GillespieLongRunFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, rn
     sortamethyl_cumulative_prop = np.zeros(steps)
 
     # a 4 X B_SIZE matrix holding a rolling window of B_SIZE many proportions to check for convergence
-    buffer = np.zeros((B_SIZE, 3))
+    buffer = np.zeros((4, B_SIZE))
     total_steps = steps  # this will get changed if we exit early
 
     # main loop - each generation or step is one iteration of this loop
@@ -230,9 +230,10 @@ def GillespieLongRunFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, rn
             buffer[3, index] = 1 - methyl_cumulative_prop[i] - unmethyl_cumulative_prop[i] - sortamethyl_cumulative_prop[i]
             check, rmsd = converges(buffer,THRESHOLD)
             rmsd_arr[i // SAMPLE_N_STEPS] = rmsd
-            if check and (i > SAMPLE_N_STEPS * B_SIZE):
-                total_steps = i
-                break
+            if check:
+                if i > SAMPLE_N_STEPS * B_SIZE:
+                    total_steps = i
+                    break
 
     # we should reach this return point on every run
     return (
