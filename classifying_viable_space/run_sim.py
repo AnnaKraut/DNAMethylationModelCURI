@@ -1,4 +1,4 @@
-import simple_sim as simple_sim
+from early_termination import GillespieLongRunFun
 import numpy as np
 
 # NOTE: The purpose of this file is to interface with the MatLab file costfun.m
@@ -19,4 +19,4 @@ params = np.array([r_hm, 2*r_hm_h, r_hm_h, # type: ignore
 
 generator = np.random.default_rng()
 
-output = simple_sim.GillespieLongRunFun(MAX, params, POP, POP_M, POP_H, generator)
+output = GillespieLongRunFun(MAX, params, POP, POP_M, POP_H, generator)

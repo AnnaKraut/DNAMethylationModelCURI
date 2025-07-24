@@ -22,18 +22,18 @@ methylatedpop = 50
 unmethylatedpop = 50
 #-----------Rates Dictionary---------
 
-default_parameters = {"r_hm": 0.5,          #0
-                      "r_hm_m": 20/totalpop, #1
-                      "r_hm_h": 10/totalpop, #2
-                      "r_uh": 0.35,         #3
-                      "r_uh_m": 11/totalpop,#4
-                      "r_uh_h": 5.5/totalpop,#5
-                      "r_mh": 0.1,           #6
-                      "r_mh_u": 10/totalpop, #7
-                      "r_mh_h": 5/totalpop,  #8
-                      "r_hu": 0.1,            #9
-                      "r_hu_u": 10/totalpop, #10
-                      "r_hu_h": 5/totalpop,   #11
+default_parameters = {"r_hm": 7.9413,          #0
+                      "r_hm_m": 0.6097 * 2, #1
+                      "r_hm_h": 0.6097, #2
+                      "r_uh": 0.0040,         #3
+                      "r_uh_m": 0.0005 * 2,#4
+                      "r_uh_h": 0.0005,#5
+                      "r_mh": 0.0724,           #6
+                      "r_mh_u": 0.0042 * 2, #7
+                      "r_mh_h": 0.0042,  #8
+                      "r_hu": 0.2238,            #9
+                      "r_hu_u": 0.0053 * 2, #10
+                      "r_hu_h": 0.0053,   #11
                       
                       #adjust birth rate directly - edit here
                       "birth_rate": 1     #12

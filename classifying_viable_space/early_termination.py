@@ -16,7 +16,7 @@ Output: wide variety of descriptive statistics
 """
 
 B_SIZE = 50
-THRESHOLD = 0
+THRESHOLD = 0.0001
 SAMPLE_N_STEPS = 1000
 
 
@@ -113,8 +113,6 @@ def converges(data, threshold):
         a boolean:
             True if the sum of all M series' root mean square deviances is below the threshold
             False otherwise
-        a float:
-            the total RMSD
     """
     M, N = data.shape
     
@@ -129,64 +127,53 @@ def converges(data, threshold):
         
         total_rmsd += np.sqrt(sse / N)
 
-    return (np.bool(total_rmsd < threshold), total_rmsd)
+    return np.bool(total_rmsd < threshold)
 
 
 @njit
 def GillespieLongRunFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, rng):
-    methylated_arr = np.zeros(steps)
-    unmethylated_arr = np.zeros(steps)
-    time_arr = np.zeros(steps)
-    rmsd_arr = np.zeros(steps//SAMPLE_N_STEPS)
-    # set the first elements of the methylated/unmethylated arrays to the starting values
-    methylated_arr[0] = pop_methyl
-    unmethylated_arr[0] = pop_unmethyl
-    # set the first element of the time array to zero, so that it stays synced up with the (un)methylated arrays
-    time_arr[0] = 0
+    # to track the current state
+    curr_methyl = pop_methyl
+    curr_unmethyl = pop_unmethyl
+    
     rates = np.zeros(5)
+    
     # define our four amounts of cumulative time spent in different areas. By the end these will sum to time_arr[-1]
+    total_time = 0
     methyl_cumulative = 0
     unmethyl_cumulative = 0
     middle_cumulative = 0
     sortamethl_cumulative = 0
 
-    # the ith entry in each of the arrays will represent what proportion of cumulative time, by the ith step, was spent in each state
-    methyl_cumulative_prop = np.zeros(steps)
-    unmethyl_cumulative_prop = np.zeros(steps)
-    sortamethyl_cumulative_prop = np.zeros(steps)
-
     # a 4 X B_SIZE matrix holding a rolling window of B_SIZE many proportions to check for convergence
     buffer = np.zeros((4, B_SIZE))
-    total_steps = steps  # this will get changed if we exit early
 
     # main loop - each generation or step is one iteration of this loop
-    for i in range(
-        1, steps
-    ):  # start at 1, since the first step is given by pop_methyl/pop_unmethyl
+    for i in range(1, steps):  # start at 1, since the first step is given by pop_methyl/pop_unmethyl
 
         # find the rates of each event for the current parameters
         rates[0] = maintenance_rate_collaborative(
-            methylated_arr[i - 1], unmethylated_arr[i - 1], totalpop, param_arr
+            curr_methyl, curr_unmethyl, totalpop, param_arr
         )
         rates[1] = denovo_rate_collaborative(
-            methylated_arr[i - 1], unmethylated_arr[i - 1], totalpop, param_arr
+            curr_methyl, curr_unmethyl, totalpop, param_arr
         )
         rates[2] = demaintenance_rate_collaborative(
-            methylated_arr[i - 1], unmethylated_arr[i - 1], totalpop, param_arr
+            curr_methyl, curr_unmethyl, totalpop, param_arr
         )
         rates[3] = demethylation_rate_collaborative(
-            methylated_arr[i - 1], unmethylated_arr[i - 1], totalpop, param_arr
+            curr_methyl, curr_unmethyl, totalpop, param_arr
         )
         rates[4] = birth_rate(param_arr)
         rate_sum = np.sum(rates)
 
         # find the expected wait for an event to happen
         tau = rng.exponential(scale=1 / rate_sum)
-        time_arr[i] = tau + time_arr[i - 1]
+        total_time = tau + total_time
 
         # calculate the time increment after calculating tau but BEFORE calculating the next step
         curr_state = classify_state(
-            methylated_arr[i - 1], unmethylated_arr[i - 1], totalpop
+            curr_methyl, curr_unmethyl, totalpop
         )
         if curr_state == 1:
             methyl_cumulative += tau
@@ -197,11 +184,6 @@ def GillespieLongRunFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, rn
         else:
             middle_cumulative += tau
 
-        # these arrays store the proportion of the sites that are methylated/unmethylated at a given time
-        methyl_cumulative_prop[i] = methyl_cumulative / time_arr[i]
-        unmethyl_cumulative_prop[i] = unmethyl_cumulative / time_arr[i]
-        sortamethyl_cumulative_prop[i] = sortamethl_cumulative / time_arr[i]
-
         # normalize the rates to be within (0,1)
         normalized_rates = rates / rate_sum
 
@@ -210,9 +192,9 @@ def GillespieLongRunFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, rn
         uniform = rng.uniform()
         for event_number in range(5):
             if uniform < normalized_rates[event_number] + sum_so_far:
-                methylated_arr[i], unmethylated_arr[i] = events(
-                    methylated_arr[i - 1],
-                    unmethylated_arr[i - 1],
+                curr_methyl, curr_unmethyl = events(
+                    curr_methyl,
+                    curr_unmethyl,
                     totalpop,
                     event_number,
                     rng,
@@ -224,25 +206,21 @@ def GillespieLongRunFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, rn
         # check if the proportions need to be saved to the buffer
         if i % SAMPLE_N_STEPS == 0:
             index = (i // SAMPLE_N_STEPS) % B_SIZE
-            buffer[0, index] = methyl_cumulative_prop[i]
-            buffer[1, index] = unmethyl_cumulative_prop[i]
-            buffer[2, index] = sortamethyl_cumulative_prop[i]
-            buffer[3, index] = 1 - methyl_cumulative_prop[i] - unmethyl_cumulative_prop[i] - sortamethyl_cumulative_prop[i]
-            check, rmsd = converges(buffer,THRESHOLD)
-            rmsd_arr[i // SAMPLE_N_STEPS] = rmsd
+            buffer[0, index] = methyl_cumulative / total_time
+            buffer[1, index] = unmethyl_cumulative / total_time
+            buffer[2, index] = sortamethl_cumulative / total_time
+            buffer[3, index] = middle_cumulative / total_time
+            check = converges(buffer,THRESHOLD)
             if check:
                 if i > SAMPLE_N_STEPS * B_SIZE:
-                    total_steps = i
                     break
 
     # we should reach this return point on every run
+    # print('Terminated at ', i/steps*100, '% of max runtime')
+
     return (
-        methyl_cumulative,
-        unmethyl_cumulative,
-        middle_cumulative,
-        time_arr[: total_steps + 1],
-        methyl_cumulative_prop[: total_steps + 1],
-        unmethyl_cumulative_prop[: total_steps + 1],
-        sortamethyl_cumulative_prop[: total_steps + 1],
-        rmsd_arr[: (total_steps // SAMPLE_N_STEPS) + 1]
+        methyl_cumulative / total_time,
+        unmethyl_cumulative / total_time,
+        middle_cumulative / total_time,
+        sortamethl_cumulative / total_time
     )
