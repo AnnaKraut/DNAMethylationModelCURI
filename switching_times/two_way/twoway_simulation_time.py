@@ -26,30 +26,33 @@ as well as the empirical mean of the measurements. To enable these graphs, simpl
 #user should enter begin, end, step for the parameter they want to change.
 param_begin_val = 0
 param_end_val = 3
-step_count = 50
+step_count = 51
 # define a parameter to vary - must be in the parameters dictionary
 param_to_change = "birth_rate"
 #define batch size - how many different runs we average for each step - usually 5000 is fine
-batch_size = 5000
+batch_size = 100
 #define length of trials in steps (default 10000) - they will usually stop earlier, this is more for allocating space
-trial_max_length = 10000
+trial_max_length = 5000000
 #define starting population - the starting counts of methylated/unmethylated are further down in the file
 totalpop = 100
 #-----------Rates Dictionary---------
-default_parameters = {"r_hm": 0.5,          #0
-                      "r_hm_m": 20/totalpop, #1
-                      "r_hm_h": 10/totalpop, #2
-                      "r_uh": 0.35,         #3
-                      "r_uh_m": 11/totalpop,#4
-                      "r_uh_h": 5.5/totalpop,#5
-                      "r_mh": 0.1,           #6
-                      "r_mh_u": 10/totalpop, #7
-                      "r_mh_h": 5/totalpop,  #8
-                      "r_hu": 0.1,            #9
-                      "r_hu_u": 10/totalpop, #10
-                      "r_hu_h": 5/totalpop,   #11
-                      "birth_rate": 1         #12
+default_parameters = {"r_hm": 4.8790e-01,          #0
+                      "r_hm_m": 1.9257e+00 * 2, #1
+                      "r_hm_h": 1.9257e+00, #2
+                      "r_uh": 9.0000e-04,         #3
+                      "r_uh_m": 2.0000e-04 * 2,#4
+                      "r_uh_h": 2.0000e-04,#5
+                      "r_mh": 8.5300e-02,           #6
+                      "r_mh_u": 1.3000e-03 * 2, #7
+                      "r_mh_h": 1.3000e-03,  #8
+                      "r_hu": 2.5620e-01,            #9
+                      "r_hu_u": 2.8000e-03 * 2, #10
+                      "r_hu_h": 2.8000e-03,   #11
+                      
+                      #adjust birth rate directly - edit here
+                      "birth_rate": 1     #12
 }
+
 
 #This dictionary just matches each parameter to its place in the list.
 default_indices = {
@@ -99,7 +102,7 @@ def main(rngs,SwitchDirection,methylatedpop, unmethylatedpop):
 
 #-----------setup - METHYLATED TO UNMETHYLATED-----------
 #generate the arrays for our output - None (or null value) is the default
-exponential_parameters_MtoU = [None] * step_count
+exponential_parameters_MtoU = np.zeros(step_count)
 gamma_shape_MtoU = [None] * step_count
 gamma_location_MtoU = [None] * step_count
 gamma_scale_MtoU = [None] * step_count
@@ -118,7 +121,7 @@ for i in range(step_count):
 
 #-----------parameters - edit here - METHYLATED TO UNMETHYLATED-----------
 methylatedpop = 71
-unmethylatedpop = 13
+unmethylatedpop = 29
 
 #-----------Call simulation-----------
 SwitchDirection = -1
@@ -150,15 +153,15 @@ for step in range(step_count):
 
 #-----------parameters - edit here - UNMETHYLATED TO METHYLATED-----------
 
-methylatedpop = 4
-unmethylatedpop = 72
+methylatedpop = 2
+unmethylatedpop = 75
 
 #-----------call simulation-----------
 SwitchDirection = 1
 output = main(generators,1,methylatedpop, unmethylatedpop)
 
 #generate the arrays for our output - None (or null value) is the default
-exponential_parameters_UtoM = [None] * step_count
+exponential_parameters_UtoM = np.zeros(step_count)
 gamma_shape_UtoM = [None] * step_count
 gamma_location_UtoM = [None] * step_count
 gamma_scale_UtoM = [None] * step_count
@@ -202,20 +205,27 @@ plt.close()
 final_label = "Two-way switching directions with Population = 100"
 run_stats = "Batches of " + str(batch_size) + ", running for maximum of " + str(trial_max_length) + " steps each"
 
+plt.subplot(2,1,1)
 #MtoU
-plt.plot(step_array, exponential_parameters_MtoU,label="exponential parameters")
 plt.plot(step_array,timeouts_MtoU, label = "proportion timed out, scaled by 10x")
 plt.plot(step_array, exponential_KS_MtoU, label="Exponential KS error, scaled by 10x")
 # plt.plot(step_array, empirical_mean_MtoU, label='Empirical Mean',linestyle='none',marker='.')
 
 #UtoM
-plt.plot(step_array, exponential_parameters_UtoM,label="exponential parameters", linestyle='dashed')
 plt.plot(step_array,timeouts_UtoM, label = "proportion timed out, scaled by 10x", linestyle='dashed')
 plt.plot(step_array, exponential_KS_UtoM, label="Exponential KS error, scaled by 10x", linestyle='dashed')
 # plt.plot(step_array, empirical_mean_UtoM, label='Empirical Mean', linestyle='none',marker='.')
 
 plt.title(final_label + "\n" + run_stats + "\n" + "Solid: Hyper-to-Hypomethylated, dashed: Hypo-to-Hypermethylated")
 plt.xlabel('Value of parameter '+ param_to_change)
+# plt.ylabel('Exponential parameter of switching time distribution')
+plt.legend(loc='upper right')
+
+plt.subplot(2,1,2)
+plt.plot(step_array, 1/exponential_parameters_MtoU,label="exponential parameters")
+plt.plot(step_array, 1/exponential_parameters_UtoM,label="exponential parameters", linestyle='dashed')
 plt.ylabel('Exponential parameter of switching time distribution')
 plt.legend(loc='upper right')
+
+
 plt.show()

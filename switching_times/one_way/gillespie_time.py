@@ -69,47 +69,63 @@ def events(methylated, unmethylated, totalpop, i_local, rng_local):
 
 @njit
 def GillespieSwitchFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, SwitchDirection, rng):
-    methylated_arr = np.zeros(steps)
-    unmethylated_arr = np.zeros(steps)
-    methylated_arr[0] = pop_methyl 
-    unmethylated_arr[0] = pop_unmethyl
-    time_arr = np.zeros(steps) 
-    time_arr[0] = 0 #initialize first value to zero to stay in sync with (un)methylated_arr
-    start_state = find_state(pop_methyl,pop_unmethyl, totalpop)
-    rates = np.zeros(5) #using numpy array may or may not be optimal here - possible refactor point
+    # to track the current state
+    curr_methyl = pop_methyl
+    curr_unmethyl = pop_unmethyl
+    
+    rates = np.zeros(5)
+    
+    # define our four amounts of cumulative time spent in different areas. By the end these will sum to time_arr[-1]
+    total_time = 0
 
-    #main loop - each generation or step is one iteration of this loop
-    for i in range(1, steps): #start at 1, since the first step is given by pop_methyl/pop_unmethyl
+    # main loop - each generation or step is one iteration of this loop
+    for i in range(1, steps):  # start at 1, since the first step is given by pop_methyl/pop_unmethyl
 
-        #find the rates of each event for the current parameters
-        rates[0] = maintenance_rate_collaborative(methylated_arr[i-1],unmethylated_arr[i-1],totalpop,param_arr)
-        rates[1] = denovo_rate_collaborative(methylated_arr[i-1],unmethylated_arr[i-1],totalpop,param_arr)
-        rates[2] = demaintenance_rate_collaborative(methylated_arr[i-1],unmethylated_arr[i-1],totalpop,param_arr)
-        rates[3] = demethylation_rate_collaborative(methylated_arr[i-1],unmethylated_arr[i-1],totalpop,param_arr)
+        # find the rates of each event for the current parameters
+        rates[0] = maintenance_rate_collaborative(
+            curr_methyl, curr_unmethyl, totalpop, param_arr
+        )
+        rates[1] = denovo_rate_collaborative(
+            curr_methyl, curr_unmethyl, totalpop, param_arr
+        )
+        rates[2] = demaintenance_rate_collaborative(
+            curr_methyl, curr_unmethyl, totalpop, param_arr
+        )
+        rates[3] = demethylation_rate_collaborative(
+            curr_methyl, curr_unmethyl, totalpop, param_arr
+        )
         rates[4] = birth_rate(param_arr)
         rate_sum = np.sum(rates)
 
-        #find the expected wait for an event to happen
-        tau = rng.exponential(scale = 1/rate_sum)
-        time_arr[i] = tau + time_arr[i-1]
+        # find the expected wait for an event to happen
+        tau = rng.exponential(scale=1 / rate_sum)
+        total_time = tau + total_time
 
-        #normalize the rates to be within (0,1)
-        normalized_rates= rates / rate_sum
+        # normalize the rates to be within (0,1)
+        normalized_rates = rates / rate_sum
 
-        #select which event happens by comparing the normalized rates to a random variable
+        # select which event happens by comparing the normalized rates to a random variable
         sum_so_far = 0
         uniform = rng.uniform()
         for event_number in range(5):
             if uniform < normalized_rates[event_number] + sum_so_far:
-                methylated_arr[i], unmethylated_arr[i] = events(methylated_arr[i-1], unmethylated_arr[i-1], totalpop,event_number,rng)
+                curr_methyl, curr_unmethyl = events(
+                    curr_methyl,
+                    curr_unmethyl,
+                    totalpop,
+                    event_number,
+                    rng,
+                )
                 break
             else:
                 sum_so_far += normalized_rates[event_number]
 
-        # decide which state we are in - if we switched, this block will terminate the program
-        curr_state = find_state(methylated_arr[i], unmethylated_arr[i], totalpop)
+        curr_state = find_state(
+            curr_methyl, curr_unmethyl, totalpop
+        )
         if curr_state == SwitchDirection:
-            return time_arr[i]
-        
-    #we timed out - return a negative value to indicate that this isn't a normal run.
-    return -1 * time_arr[i]
+            return total_time
+
+    # we should reach this return point on every run
+
+    return -1 * total_time

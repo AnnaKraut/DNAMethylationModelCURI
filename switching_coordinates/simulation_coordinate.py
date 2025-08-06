@@ -27,21 +27,23 @@ unmethylatedpop = 75
 #SwitchDirection - a simulation terminates when it reaches this state
 SwitchDirection = 1 #1 -> mostly methylated, -1-> mostly unmethylated
 #-----------Rates Dictionary---------
-default_parameters = {"r_hm": 0.5,          #0
-                      "r_hm_m": 20/totalpop, #1
-                      "r_hm_h": 10/totalpop, #2
-                      "r_uh": 0.35,         #3
-                      "r_uh_m": 11/totalpop,#4
-                      "r_uh_h": 5.5/totalpop,#5
-                      "r_mh": 0.1,           #6
-                      "r_mh_u": 10/totalpop, #7
-                      "r_mh_h": 5/totalpop,  #8
-                      "r_hu": 0.1,            #9
-                      "r_hu_u": 10/totalpop, #10
-                      "r_hu_h": 5/totalpop,   #11
-                      #edit birth_rate directly in this dictionary
-                      "birth_rate": 1.6         #12
+default_parameters = {"r_hm": 8.1734e+00,          #0
+                      "r_hm_m": 2.0121e+00 * 2, #1
+                      "r_hm_h": 2.0121e+00, #2
+                      "r_uh": 3.9000e-03,         #3
+                      "r_uh_m": 2.0000e-04 * 2,#4
+                      "r_uh_h": 2.0000e-04,#5
+                      "r_mh": 1.7010e-01,           #6
+                      "r_mh_u": 4.7000e-03 * 2, #7
+                      "r_mh_h": 4.7000e-03,  #8
+                      "r_hu": 3.4970e-01,            #9
+                      "r_hu_u": 6.6000e-03 * 2, #10
+                      "r_hu_h": 6.6000e-03,   #11
+                      
+                      #adjust birth rate directly - edit here
+                      "birth_rate": 1     #12
 }
+
 
 #This dictionary just matches each parameter to its place in the list.
 default_indices = {
