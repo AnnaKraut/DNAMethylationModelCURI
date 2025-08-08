@@ -3,24 +3,10 @@ from numba import jit
 from numba import njit
 import matplotlib.pyplot as plt
 
-# NOTE: this is where the current progress on stopping simulations based on convergence are
-
 """
-This file represents a long-run version of the gillespie algorithm. 
-
-Goal: Get the proportion of time spent in a variety of regions for a specific parameter set
-
-Input: steps, parameter list, target parameter, parameter start, parameter end, bin count
-Output: wide variety of descriptive statistics
-
+This file is for running extraordinarily long simulations
 """
-
-# hyperparameters for testing convergence of population proportions
-B_SIZE = 50
-THRESHOLD = 0.0001
-SAMPLE_N_STEPS = 1000
-
-
+ 
 @njit
 def maintenance_rate_collaborative(methylated, unmethylated, site_count, param_local):
     hemimethylated = site_count - (methylated + unmethylated)
@@ -101,37 +87,6 @@ def events(methylated, unmethylated, totalpop, i_local, rng_local):
         return 0, (unmethylated + newly_unmethylated)
 
 @njit
-def converges(data, threshold):
-    """
-    For checking if the proportions are converging
-    
-    input:
-        data:   an M x N numpy array where 
-                    M is the number of series
-                    N is the number of data points
-    
-    output:
-        a boolean:
-            True if the sum of all M series' root mean square deviances is below the threshold
-            False otherwise
-    """
-    M, N = data.shape
-    
-    total_rmsd = 0.0
-    for i in range(M):
-        series = data[i]
-        mean = np.mean(series)
-
-        sse = 0
-        for j in range(N):
-            sse += (series[j] - mean) ** 2
-        
-        total_rmsd += np.sqrt(sse / N)
-
-    return np.bool(total_rmsd < threshold)
-
-
-@njit
 def GillespieLongRunFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, rng):
     # to track the current state
     curr_methyl = pop_methyl
@@ -145,9 +100,6 @@ def GillespieLongRunFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, rn
     unmethyl_cumulative = 0
     middle_cumulative = 0
     sortamethl_cumulative = 0
-
-    # a 4 X B_SIZE matrix holding a rolling window of B_SIZE many proportions to check for convergence
-    buffer = np.zeros((4, B_SIZE))
 
     # main loop - each generation or step is one iteration of this loop
     for i in range(1, steps):  # start at 1, since the first step is given by pop_methyl/pop_unmethyl
@@ -204,22 +156,7 @@ def GillespieLongRunFun(steps, param_arr, totalpop, pop_methyl, pop_unmethyl, rn
             else:
                 sum_so_far += normalized_rates[event_number]
 
-        # check if the proportions need to be saved to the buffer
-        if i % SAMPLE_N_STEPS == 0:
-            index = (i // SAMPLE_N_STEPS) % B_SIZE
-            buffer[0, index] = methyl_cumulative / total_time
-            buffer[1, index] = unmethyl_cumulative / total_time
-            buffer[2, index] = sortamethl_cumulative / total_time
-            buffer[3, index] = middle_cumulative / total_time
-            check = converges(buffer,THRESHOLD)
-            
-            # if the proportions are converging and we have a full buffer, then stop the simulation
-            if check:
-                if i > SAMPLE_N_STEPS * B_SIZE:
-                    break
-
     # we should reach this return point on every run
-    # print('Terminated at ', i/steps*100, '% of max runtime')
 
     return (
         methyl_cumulative / total_time,
