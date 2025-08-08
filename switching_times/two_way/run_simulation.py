@@ -1,6 +1,5 @@
 import numpy as np
 import gillespie_time as gillespie_time
-import matplotlib.pyplot as plt
 import scipy.stats as stats
 import numba
 import statistics
@@ -11,20 +10,15 @@ import dill
 Performs many gillespie runs at once, in both directions, to get information about the time 
 that it takes to switch from methylated to unmethylated and vice versa.
 
-Edit the parameters in the `parameters` block.
+To use, edit the parameters to test in the parameters block, and set the initial conditions
+for each switch ideally using the average entry coordinates from the switching coordinates
+simulation. Set the baseline parameters of the simulation in the Rates Dictionary.
 
-Important! Since this program simulates methylated->unmethylated and unmethylated->methylated transitions, 
-you must edit the starting populations for BOTH transitions, and these populations are NOT in the parameters block. 
-You can find these starting populations by searching for `edit here` in the file.
-
-There are many different graphing options for this simulation! 
-You can graph various parameters and goodness-of-fit measures for exponential, normal, and gamma fits,
-as well as the empirical mean of the measurements. To enable these graphs, simply uncomment them at the bottom of the file.
+The data is saved to file path specified so that you don't have to rerun the simulation to
+change the aesthetics of the graph
 """
 
 
-def nan_array(n):
-    return [np.nan for i in range(n)]
 
 
 # -----------parameters-----------
@@ -32,20 +26,18 @@ def nan_array(n):
 param_to_change = "birth_rate"
 param_begin_val = 0
 param_end_val = 3
-step_count = 49                     # number of evenly spaced parameter points to check
+step_count = 49                         # number of evenly spaced parameter points to check
 
-batch_size = 1000                   # number of simulations ran per parameter
-trial_max_length = 5000000          # maximum length of trials (in simulation steps)
+batch_size = 1000                       # number of simulations ran per parameter
+trial_max_length = 5000000              # maximum length of trials (in simulation steps)
 
-totalpop = 100                      # number of CpG sites to simulate
+totalpop = 100                          # number of CpG sites to simulate
 
 # starting conditions for each switching direction
 u_to_m_initial = {"methylated":  5, "unmethylated": 74}
 m_to_u_initial = {"methylated": 71, "unmethylated": 29}
 
-outfile = "P8/two_way_sim_data.pkl"    # the filename to save data to to graph later
-
-
+output_file = "P8/two_way_sim_data.pkl"     # the filename to save simulation data to for later graphing
 
 # -----------Rates Dictionary---------
 default_parameters = {"r_hm": 8.1734e+00,          #0
@@ -64,6 +56,8 @@ default_parameters = {"r_hm": 8.1734e+00,          #0
                       #adjust birth rate directly - edit here
                       "birth_rate": 1     #12
 }
+
+
 
 
 # This dictionary just matches each parameter to its place in the list.
@@ -98,6 +92,9 @@ parameter_labels = [
     "r_hu_h",
     "birth_rate",
 ]
+
+def nan_array(n):
+    return [np.nan for i in range(n)]
 
 # this line creates a numpy array with the same values as the dictionary - it is VITAL that they stay in the same order!!
 # changing the order of either the labels or the stuff in this list will create subtle errors in the rate calculations!
@@ -246,6 +243,5 @@ for step in range(step_count):
     print("timed-out simulations: " + str(raw_timeouts) + " out of " + str(batch_size))
     print("exponential paramater UtoM= " + str(exponential_parameters_UtoM[step]))
 
-# -----------saving data----------
-
-dill.dump_session(outfile)
+# saves the workspace variables at the path held in output_file
+dill.dump_session(output_file)

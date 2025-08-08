@@ -1,6 +1,5 @@
 import numpy as np
 import gillespie_time
-import matplotlib.pyplot as plt
 import scipy.stats as stats
 import numba
 import statistics
@@ -11,33 +10,35 @@ import dill
 Performs many gillespie runs at once to get information about the time 
 that it takes to switch from methylated to unmethylated and vice versa.
 
-Edit the parameters in the `parameters` block.
+To use, edit the parameters to test in the parameters block, and set the initial conditions
+for each switch ideally using the average entry coordinates from the switching coordinates
+simulation. Set the baseline parameters of the simulation in the Rates Dictionary.
 
-There are many different graphing options for this simulation! 
-You can graph various parameters and goodness-of-fit measures for exponential, normal, and gamma fits,
-as well as the empirical mean of the measurements. To enable these graphs, simply uncomment them at the bottom of the file.
+The data is saved to file path specified so that you don't have to rerun the simulation to
+change the aesthetics of the graph
 """
 
+output_file = "P8/u_to_m_switch.pkl"
 
-# -----------parameters - edit here-----------
-# the simulation will generate a range of values of the target parameter between param_begin_val and param_end_val
-param_begin_val = 0.7
-param_end_val = 3
-step_count = 100
-# define a parameter to vary - must be in the parameters dictionary
+
+# -----------parameters-----------
+# user should enter begin, end, step for the parameter they want to change.
 param_to_change = "birth_rate"
-# define batch size - this determines how many runs are averaged in each step
-batch_size = 1000
-# define length of trials in steps (default 1000) - they will usually stop earlier, this is more for allocating space
-trial_max_length = 5000000
-# define starting population (number of sites)
-totalpop = 100
-methylatedpop = 71
-unmethylatedpop = 29
-# SwitchDirection - a simulation terminates when it reaches this state
-SwitchDirection = -1  # 1 -> mostly methylated, -1-> mostly unmethylated
+param_begin_val = 0
+param_end_val = 3
+step_count = 49                         # number of evenly spaced parameter points to check
 
-outfile = "m_to_u_switch.pkl"
+batch_size = 1000                       # number of simulations ran per parameter
+trial_max_length = 5000000              # maximum length of trials (in simulation steps)
+
+totalpop = 100                          # number of CpG sites to simulate
+
+# initial conditions
+methylatedpop = 6
+unmethylatedpop = 73
+
+# SwitchDirection - a simulation terminates when it reaches this state
+SwitchDirection = 1                     # 1 -> mostly methylated, -1-> mostly unmethylated
 
 # -----------Rates Dictionary---------
 default_parameters = {
@@ -53,9 +54,11 @@ default_parameters = {
     "r_hu": 3.4970e-01,  # 9
     "r_hu_u": 6.6000e-03 * 2,  # 10
     "r_hu_h": 6.6000e-03,  # 11
-    # adjust birth rate directly - edit here
     "birth_rate": 1,  # 12
 }
+
+
+
 
 # This dictionary just matches each parameter to its place in the list.
 default_indices = {
@@ -222,4 +225,5 @@ for step in range(step_count):
     # print("predicted gamma shape parameter: ", gamma_shape[step])
     print("timed-out simulations: " + str(raw_timeouts) + " out of " + str(batch_size))
 
-dill.dump_session(outfile)
+# saves the workspace variables at the path held in output_file
+dill.dump_session(output_file)

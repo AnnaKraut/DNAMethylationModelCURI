@@ -23,19 +23,19 @@ unmethylatedpop = 50
 #-----------Rates Dictionary---------
 
 default_parameters = {
-    "r_hm": 4.8790e-01,
-    "r_hm_m": 1.9257e00 * 2,
-    "r_hm_h": 1.9257e00,
-    "r_uh": 9.0000e-04,
+    "r_hm": 8.1734e+00,
+    "r_hm_m": 2.0121e+00 * 2,
+    "r_hm_h": 2.0121e+00,
+    "r_uh": 3.9000e-03,
     "r_uh_m": 2.0000e-04 * 2,
     "r_uh_h": 2.0000e-04,
-    "r_mh": 8.5300e-02,
-    "r_mh_u": 1.3000e-03 * 2,
-    "r_mh_h": 1.3000e-03,
-    "r_hu": 2.5620e-01,
-    "r_hu_u": 2.8000e-03 * 2,
-    "r_hu_h": 2.8000e-03,
-    "birth_rate": 1,
+    "r_mh": 1.7010e-01,
+    "r_mh_u": 4.7000e-03 * 2,
+    "r_mh_h": 4.7000e-03,
+    "r_hu": 3.4970e-01,
+    "r_hu_u": 6.6000e-03 * 2,
+    "r_hu_h": 6.6000e-03,
+    "birth_rate": 1
 }
 
 
@@ -112,7 +112,7 @@ for i in range(trial_max_length//1000):
 #plot our results
 
 plt.rcParams['font.size'] = 20
-# plt.title(f'Methylated : {methylated_prop:.3f}, Unmethylated: {unmethylated_prop:.3f},\n middle: {time_in_middle_prop:.3f}, middle (<30% unmethylated) {sortamethyl_cumulative_prop[-1]:.3f} \n simulated with {totalpop} sites over {trial_max_length} iterations')
+plt.title("Proportion of time spent by state over the course of a long run simulation")
 plt.xlabel('Simulation steps (sampled every 1000 points)')
 plt.ylabel('Cumulative proportion of time spent')
 plt.plot(xes, methyl_cumulative_prop_thinned,label="Hypermethylated",color="#D55E00",linewidth=2.0)

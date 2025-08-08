@@ -1,26 +1,26 @@
 import numpy as np
-import math
-import gillespie_time
 import matplotlib.pyplot as plt
-import scipy.stats as stats
-import numba
-import statistics
-from numba import prange
 import dill
 
+"""
+This script takes the one way switching simulation data and outputs graphs for the hypo to hyper methylated switch
 
-def scale_array(arr, scale):
-    return [scale * item if not item is None else np.nan for item in arr]
+The graphs outputted compare the error of fitting normal and exponential distributions to the switching times
+"""
 
-dill.load_session("u_to_m_switch.pkl")
+input_file = "P8/u_to_m_switch.pkl"         # change this to the output file specified when using run_simulation.py
 
+
+#---------loads the simulation data---------
+
+dill.load_session(input_file)
 
 #-----------graphing - edit here -----------
 
-#plotting - much of this can be removed if desired
 plt.close()
 final_label = "Switching times from unmethylated to methylated as birth rate changes \n Population = " + str(totalpop)
 run_stats = "Batches of " + str(batch_size) + ", running for maximum of " + str(trial_max_length) + " steps each"
+plt.title(final_label + "\n" + run_stats)
 
 plt.subplot(2,1,1)
 plt.plot(step_array, normal_mean, label='Normal mean',marker='.',linestyle='')
@@ -30,7 +30,6 @@ plt.plot(step_array, empirical_mean, label='Empirical Mean', linestyle='dashed')
 plt.ylabel('Exponential parameter of switching time distribution')
 plt.plot(step_array, exponential_parameters,label="exponential parameters", linestyle='dashed')
 
-plt.title(final_label + "\n" + run_stats)
 plt.legend(loc='upper right')
 
 

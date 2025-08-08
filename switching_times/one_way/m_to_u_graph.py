@@ -1,47 +1,57 @@
 import numpy as np
-import math
-import gillespie_time
 import matplotlib.pyplot as plt
-import scipy.stats as stats
-import numba
-import statistics
-from numba import prange
 import dill
 
+"""
+This script takes the one way switching simulation data and outputs graphs for the hyper to hypo methylated switch
 
-def scale_array(arr, scale):
-    return [scale * item if not item is None else np.nan for item in arr]
+The graphs outputted compare the error of fitting normal and gamma distributions to the switching times
+"""
 
-dill.load_session("m_to_u_switch.pkl")
+input_file = "P8/u_to_m_switch.pkl"         # change this to the output file specified when using run_simulation.py
 
 
-#-----------graphing - edit here -----------
+#---------loads the simulation data---------
+
+dill.load_session(input_file)
+
+# -----------graphing - edit here -----------
 
 plt.close()
-final_label = "Switching times from methylated to unmethylated regions as birth rate changes \n Population = " + str(totalpop)
+final_label = "Switching times from methylated to unmethylated as birth rate changes \n Population = " + str(totalpop)
 run_stats = "Batches of " + str(batch_size) + ", running for maximum of " + str(trial_max_length) + " steps each"
 
-plt.rcParams['font.size'] = 20
+ax1 = plt.subplot(2, 1, 1)
 
-plt.subplot(2,1,1)
-plt.plot(step_array, scale_array(timeouts, 3), label = "proportion timed out scaled x 3")
-plt.plot(step_array, scale_array(exponential_KS, 3), label="Exponential KS error scaled x 3")
+plt.title(final_label + "\n" + run_stats)   # the axis marks on the second subplot don't behave unless this is after a plt.subplot()...
 
-plt.plot(step_array, gamma_shape,label="Gamma shape scaled")
-plt.plot(step_array, scale_array(gamma_KS, 3), label="Gamma KS error scaled x 3")
-# plt.plot(step_array, line, linestyle='dotted', label = 'Birth Rate')
+ax1.plot(step_array, timeouts, label="proportion timed out", color="black")
+
+ax1.plot(step_array, exponential_KS, label="Exponential KS error", color="#F0E442")
+ax1.plot(step_array, gamma_KS, label="Gamma KS error", color="#009E73")
+
+ax1.set_ylim(0, 1)
+ax1.set_ylabel("Proportion and error", fontsize="small")
+ax1.legend(loc="upper left", fontsize="small")
+
+ax2 = ax1.twinx()
+
+ax2.plot(step_array, gamma_shape, label="Gamma shape", color="#009E73", linestyle="dashed")
+ax2.set_ylim(0, 3)
+ax2.set_ylabel("Gamma Scale Parameter", fontsize="small")
+ax2.legend(loc="upper right", fontsize="small")
 
 
-plt.title(final_label + "\n" + run_stats)
-plt.xlabel('Value of parameter '+ param_to_change)
-plt.legend(loc='upper right')
+ax3 = plt.subplot(2, 1, 2)
 
-plt.subplot(2,1,2)
+inverse_exponential = [
+    1 / scale if type(scale) == float else np.nan for scale in exponential_parameters
+]
+ax3.plot(step_array, inverse_exponential, label="Exponential lambda", color="#F0E442")
+ax3.plot(step_array, inverse_gamma_scale, label="Gamma lambda", color="#009E73")
+ax3.legend(loc="upper left", fontsize="small")
 
-plt.ylabel('Exponential parameter of switching time distribution')
-plt.plot(step_array, [1/scale if type(scale) == float else np.nan for scale in exponential_parameters],label="exponential parameters", linestyle='dashed')
-plt.plot(step_array, inverse_gamma_scale,label = "1/Gamma scale",linestyle='dashed')
-plt.legend(loc='upper right')
-
+ax3.set_ylabel("Exponential parameter of\nswitching time distribution", fontsize="small")
+ax3.set_xlabel("Birth rate", fontsize="small")
 
 plt.show()

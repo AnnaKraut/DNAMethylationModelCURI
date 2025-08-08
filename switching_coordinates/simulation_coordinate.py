@@ -8,24 +8,31 @@ from numba import prange
 """
 switching_coordinates: performs many gillespie runs at once to find the average amount of methylation and unmethylation when switches happen. 
 
-Edit the birth rate directly in the dictionary (on line 47) in this file.
+Edit the birth rate directly in the dictionary (on line 37) in this file.
 
 If you want histograms showing more detailed distributions, find the code blocks that say `edit here` and uncomment the graphing code.
 This will make a histogram for each switching direction in addition to the single, default graph.
 """
 
-#-----------parameters - edit here-------------
-#edit desired parameters directly in the default dictionary
-#define batch size - how many different runs should we average for each step? 
-batch_size = 5000
-#define length of trials in steps (default 1000) - they will usually stop earlier, this is more for allocating space
-trial_max_length = 10000
-#define starting population
-totalpop = 100
+# -----------parameters-----------
+# user should enter begin, end, step for the parameter they want to change.
+param_to_change = "birth_rate"
+param_begin_val = 0
+param_end_val = 3
+step_count = 49                         # number of evenly spaced parameter points to check
+
+batch_size = 1000                       # number of simulations ran per parameter
+trial_max_length = 5000000              # maximum length of trials (in simulation steps)
+
+totalpop = 100                          # number of CpG sites to simulate
+
+# initial conditions
 methylatedpop = 15
 unmethylatedpop = 75
+
 #SwitchDirection - a simulation terminates when it reaches this state
 SwitchDirection = 1 #1 -> mostly methylated, -1-> mostly unmethylated
+
 #-----------Rates Dictionary---------
 default_parameters = {"r_hm": 8.1734e+00,          #0
                       "r_hm_m": 2.0121e+00 * 2, #1
@@ -39,8 +46,6 @@ default_parameters = {"r_hm": 8.1734e+00,          #0
                       "r_hu": 3.4970e-01,            #9
                       "r_hu_u": 6.6000e-03 * 2, #10
                       "r_hu_h": 6.6000e-03,   #11
-                      
-                      #adjust birth rate directly - edit here
                       "birth_rate": 1     #12
 }
 
