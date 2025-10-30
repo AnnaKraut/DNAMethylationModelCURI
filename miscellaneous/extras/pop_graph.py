@@ -15,11 +15,11 @@ There are no alternate output options for this program - just edit the parameter
 
 #-----------parameters - edit here-----------
 #number of steps that the gillespie algorithm will take (large values can cause memory issues, starting around 1,000,000,000)
-trial_max_length = 100000
+trial_max_length = 10000
 #define starting population
 totalpop = 100
-methylatedpop = 50
-unmethylatedpop = 50
+methylatedpop = 6
+unmethylatedpop = 73
 #-----------Rates Dictionary---------
 
 default_parameters = {"r_hm": 18.6735,          #0
