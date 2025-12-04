@@ -11,9 +11,9 @@ This repository allows you to generate and analyze large batches of stochastic s
 Each folder is independant (doesn't use code from other folders) and does different things. Each of them uses an implementation of the Gillespie algorithm with the same **core logic**, but different **output methods**. 
 - switching_times: performs many gillespie runs at once to get information about the time that it takes to switch from methylated to unmethylated and vice versa
     - Details: There are options to fit the distribution of the switching times to exponential, normal, and gamma distributions, along with other interesting display options like empirical mean and the rate parameter of the gamma distribution. The below graphs show a few of these options.
-    - Output (twoway-simulation.py):  
+    - Output (two_way/make-graph.py):  
     <img src="images\2-way-switching-from-0-to-3-birth-rate-90-10-ratio.png" width="400" height="300">
-    - Output (simulation-time.py)  
+    - Output (one_way/make-graph.py)  
     <img src="images\1-way-switching-from-0-to-3-example.png" width="400" height="300">
 - switching_coordinates: performs many gillespie runs at once to find the average amount of methylation and unmethylation where switches happen. 
     - Details: Since a "switch" is recorded whenever 70% or more of the sites are either methylated or unmethylated, in practice this algorithm is measuring whichever category is not at 70%. For example, for a switch from hypo-to-hyper-methylated to actually count as a switch, there will always be 71 hyper-methylated sites; the number of **un**methylated sites will change, however, and the program measures this. The nature of cellular division causing large jumps in unmethylated sites will also be captured by this program.
@@ -36,6 +36,9 @@ Each folder is independant (doesn't use code from other folders) and does differ
         - for the twoway_simulation program, you will need to edit the condition in two places. Use ctrl-f (or command-f on mac) to search for the text `edit here`, and set each initial condition separately.
         - for every other simulation program, you will set the initial condition only once, in the parameters block at the beginning.
 - Edit your output metrics and graphs
+    - Some of the simulations that take longer to run (the one/two way switching time) are split up into a file that runs the simulation and a separate file that graphs the output data. This allows you to change the graph without having to run the simulation again.
+        - For these, the simulation data is dumped into a .pkl file which is then used by the associated graphing file to create the output graphs.
+        - For the one way switchs, make sure to uncomment the correct direction of switch in the run_simulation file and then use the correct graphing file.
     - The `graphing` and `postprocessing` sections at the end of each simulation file have a variety of output options. By default, all of the various statistics (fits for various distributions and the goodness of those fits) are calculated. However, it is up to you which ones are shown on the graph! Just comment out the lines starting with `plt.plot` that you don't want on the graph.
     - There are also some debug printouts that display various statistics (number of time-outs, value of parameters for fits, etc.) as the programs run. In general, any lines that involve a `print` statement are for debugging purposes, and can be added or removed without affecting the program's functionality.
 - Run the simulation program, and wait for the results!

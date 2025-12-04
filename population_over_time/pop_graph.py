@@ -12,14 +12,15 @@ it is a state where 70% of the sites are either methylated or hemimethylated.
 There are no alternate output options for this program - just edit the parameters and run it to get a graph.
 """
 
-
 #-----------parameters - edit here-----------
 #number of steps that the gillespie algorithm will take (large values can cause memory issues, starting around 1,000,000,000)
-trial_max_length = 10000
+trial_max_length = 50000
 #define starting population
 totalpop = 100
 methylatedpop = 6
 unmethylatedpop = 73
+
+SAMPLE_EVERY = 100      # thinning factor of the output graph
 #-----------Rates Dictionary---------
 
 default_parameters = {"r_hm": 18.6735,          #0
@@ -79,29 +80,31 @@ total_time = time_arr[-1]
 print(f'Check that everything adds up: \nTotal time: {total_time}')
 
 #thin out our data by saving only every 100th observation - this makes it easier to graph
-xes = list(range(trial_max_length//100)) 
+xes = list(range(trial_max_length//SAMPLE_EVERY)) 
 
 #create the arrays that we will use
-x_m_thinned = np.zeros(trial_max_length//100)
-x_u_thinned = np.zeros(trial_max_length//100)
-x_h_thinned = np.zeros(trial_max_length//100)
-time_thinned = np.zeros(trial_max_length//100)
+x_m_thinned = np.zeros(trial_max_length//SAMPLE_EVERY)
+x_u_thinned = np.zeros(trial_max_length//SAMPLE_EVERY)
+x_h_thinned = np.zeros(trial_max_length//SAMPLE_EVERY)
+time_thinned = np.zeros(trial_max_length//SAMPLE_EVERY)
 
-#populate the arrays by picking every 100th number
-for i in range(trial_max_length//100):
-      x_m_thinned[i] = x_m_arr[i*100]
-      x_u_thinned[i] = x_u_arr[i*100]
-      time_thinned[i] = time_arr[i*100]
+#populate the arrays by picking every SAMPLE_EVERY'th number
+for i in range(trial_max_length//SAMPLE_EVERY):
+      x_m_thinned[i] = x_m_arr[i*SAMPLE_EVERY]
+      x_u_thinned[i] = x_u_arr[i*SAMPLE_EVERY]
+      time_thinned[i] = time_arr[i*SAMPLE_EVERY]
 
 x_h_thinned = totalpop - x_m_thinned - x_u_thinned
 
+
+#-----------plotting-----------
 #plot our results
 plt.title(f'Populations of CpG dyads over time by methylation level  \n simulated with {totalpop} sites over {trial_max_length} iterations',fontsize=10)
-# plt.xlabel('x-axis samples every hundredth point to improve readability')
+plt.xlabel(f'x-axis samples one point in every {SAMPLE_EVERY} points to improve readability')
 plt.ylabel('population')
-plt.plot(time_thinned, x_m_thinned,label="Methylated")
-plt.plot(time_thinned, x_u_thinned,label="Unmethylated")
-# plt.plot(time_thinned, x_h_thinned,label="Hemimethylated")
+plt.plot(time_thinned, x_m_thinned,label="Methylated",color="#D55E00")
+plt.plot(time_thinned, x_u_thinned,label="Unmethylated",color="#0072B2")
+# plt.plot(time_thinned, x_h_thinned,label="Hemimethylated",color="#CC79A7",linestyle="--")
 plt.legend(loc='upper right')
 plt.show()
       

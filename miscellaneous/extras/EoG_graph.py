@@ -95,41 +95,19 @@ x_h_arr = totalpop - x_m_arr - x_u_arr
 # print the amount of time that our simulation lasted
 total_time = time_arr[-1]
 print(f"Check that everything adds up: \nTotal time: {total_time}")
-# print(time_arr)
 
-# thin out our data by saving only every 100th observation - this makes it easier to graph
-# xes = list(range(trial_max_length//100))
 
-"""
-#create the arrays that we will use
-x_m_thinned = np.zeros(trial_max_length//100)
-x_u_thinned = np.zeros(trial_max_length//100)
-x_h_thinned = np.zeros(trial_max_length//100)
-time_thinned = np.zeros(trial_max_length//100)
-
-#populate the arrays by picking every 100th number
-for i in range(trial_max_length//100):
-      x_m_thinned[i] = x_m_arr[i*100]
-      x_u_thinned[i] = x_u_arr[i*100]
-      time_thinned[i] = time_arr[i*100]
-
-x_h_thinned = totalpop - x_m_thinned - x_u_thinned
-"""
 plt.rcParams['font.size'] = 20
 
-# with plt.xkcd():
 # plot our results
 plt.title(
     f"Populations of CpG dyads pre cell split over time by methylation  \n simulated with {totalpop} sites over {trial_max_length} iterations",
     fontsize=20,
 )
-# plt.xlabel('x-axis samples every hundredth point to improve readability')
 plt.xlabel("Time (average cell generations)")
 plt.ylabel("Population (dyads)")
-# plt.xlabel('number of methylated dyads')
 plt.plot(time_arr, x_m_arr, label="Methylated", alpha=.7, color="#D55E00")
 plt.plot(time_arr, x_u_arr, label="Unmethylated", alpha=.7, color="#0072B2")
-# plt.plot(time_arr, x_h_arr,label="Hemimethylated")
-# plt.plot(x_m_arr,x_u_arr)
+# plt.plot(time_arr, x_h_arr,label="Hemimethylated", alpha=.7, color="#CC79A7")
 plt.legend(loc="upper right")
 plt.show()

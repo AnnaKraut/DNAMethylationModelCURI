@@ -18,10 +18,15 @@ The data is saved to file path specified so that you don't have to rerun the sim
 change the aesthetics of the graph
 """
 
-output_file = "P8/u_to_m_switch.pkl"
-
-
 # -----------parameters-----------
+# SwitchDirection - a simulation terminates when it reaches this state (1 -> mostly methylated, -1-> mostly unmethylated)
+### Uncomment For U to M Direction:
+SwitchDirection = 1
+output_file = "P8/u_to_m_switch.pkl"
+### Uncomment For M to U Direction:
+# SwitchDirection = -1
+# output_file = "P8/m_to_u_switch.pkl"
+
 # user should enter begin, end, step for the parameter they want to change.
 param_to_change = "birth_rate"
 param_begin_val = 0
@@ -36,9 +41,6 @@ totalpop = 100                          # number of CpG sites to simulate
 # initial conditions
 methylatedpop = 6
 unmethylatedpop = 73
-
-# SwitchDirection - a simulation terminates when it reaches this state
-SwitchDirection = 1                     # 1 -> mostly methylated, -1-> mostly unmethylated
 
 # -----------Rates Dictionary---------
 default_parameters = {
